@@ -9,6 +9,8 @@ import { TransportRegistry } from './domain/transport';
 import { HttpTransport } from './transports/httpTransport';
 import fastifyRateLimit from '@fastify/rate-limit';
 import fastifyRawBody from 'fastify-raw-body';
+import fastifyStatic from '@fastify/static';
+import path from 'path';
 
 export const buildApp = (): FastifyInstance => {
   // Register default transports
@@ -57,11 +59,23 @@ export const buildApp = (): FastifyInstance => {
     };
   });
 
-  app.register(eventRoutes, { prefix: '/events' });
-  app.register(destinationRoutes, { prefix: '/destinations' });
-  app.register(deliveryRoutes, { prefix: '/deliveries' });
-  app.register(dispatcherRoutes, { prefix: '/dispatch' });
-  app.register(debugRoutes, { prefix: '/debug' });
+  // Prefix all API routes with /api/v1
+  app.register(eventRoutes, { prefix: '/api/v1/events' });
+  app.register(destinationRoutes, { prefix: '/api/v1/destinations' });
+  app.register(deliveryRoutes, { prefix: '/api/v1/deliveries' });
+  app.register(dispatcherRoutes, { prefix: '/api/v1/dispatch' });
+  app.register(debugRoutes, { prefix: '/api/v1/debug' });
+
+  // Serve Frontend
+  app.register(fastifyStatic, {
+    root: path.join(__dirname, '../../ui/dist'),
+    wildcard: false,
+  });
+
+  // Catch-all route to serve SPA index.html for non-API requests
+  app.get('/*', (_request, reply) => {
+    reply.sendFile('index.html');
+  });
 
   return app;
 };
