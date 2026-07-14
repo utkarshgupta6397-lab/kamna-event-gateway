@@ -1,33 +1,46 @@
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
-import { v4 as uuidv4 } from 'uuid';
 import * as eventService from '../services/eventService';
+import * as destinationService from '../services/destinationService';
+import * as deliveryService from '../services/deliveryService';
+import { HttpEventNormalizer } from '../domain/event';
+import { DeliveryPlanner } from '../domain/delivery';
 
 export const eventRoutes: FastifyPluginAsync = async (app: FastifyInstance) => {
+  const normalizer = new HttpEventNormalizer();
+
   app.post('/test', async (request, reply) => {
     const start = process.hrtime();
-    const requestId = uuidv4();
     
-    // Store incoming request
-    await eventService.createEvent({
-      requestId,
-      method: request.method,
-      path: request.url,
-      headers: request.headers,
-      query: request.query as Record<string, unknown>,
-      body: request.body || null,
-      sourceIp: request.ip,
-      receivedAt: new Date(),
-      status: 'received',
-    });
+    // Domain modeling: Convert raw HTTP request to abstract Event
+    const domainEvent = normalizer.normalize(request);
+    
+    // Store normalized event
+    await eventService.persistEvent(domainEvent);
+
+    // Delivery Planning Phase
+    const enabledDestinations = await destinationService.getEnabledDestinations();
+    const destinations = enabledDestinations.map(d => ({
+      ...d,
+      type: d.type as 'webhook' | 'kafka',
+      headers: d.headers as Record<string, string> | null,
+      authentication: d.authentication as import('../domain/destination').AuthenticationConfig | null,
+    }));
+    
+    const plannedDeliveries = DeliveryPlanner.planDeliveries(domainEvent, destinations);
+    
+    if (plannedDeliveries.length > 0) {
+      await deliveryService.createDeliveries(plannedDeliveries);
+    }
 
     const diff = process.hrtime(start);
     const processingTimeMs = Math.round((diff[0] * 1e9 + diff[1]) / 1e6);
     
-    request.log.info({ processingTimeMs, requestId }, 'Event stored successfully');
+    request.log.info({ processingTimeMs, eventId: domainEvent.eventId }, 'Event normalized and stored');
 
+    // Maintain backwards compatibility with API contract
     return reply.status(201).send({
       success: true,
-      requestId,
+      requestId: domainEvent.eventId,
     });
   });
 
@@ -50,5 +63,11 @@ export const eventRoutes: FastifyPluginAsync = async (app: FastifyInstance) => {
     }
 
     return reply.send({ event });
+  });
+
+  app.get('/:eventId/deliveries', async (request, reply) => {
+    const params = request.params as { eventId: string };
+    const records = await deliveryService.getDeliveriesByEventId(params.eventId);
+    return reply.send({ deliveries: records });
   });
 };
