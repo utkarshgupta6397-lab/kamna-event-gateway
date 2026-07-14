@@ -5,11 +5,20 @@ import * as deliveryService from '../services/deliveryService';
 import { dispatchDelivery } from '../services/dispatcherService';
 import { HttpEventNormalizer } from '../domain/event';
 import { DeliveryPlanner } from '../domain/delivery';
+import { verifyMetaSignature } from '../plugins/metaSignature';
 
 export const eventRoutes: FastifyPluginAsync = async (app: FastifyInstance) => {
   const normalizer = new HttpEventNormalizer();
 
-  app.post('/test', async (request, reply) => {
+  app.post(
+    '/test',
+    {
+      config: {
+        rawBody: true, // required for fastify-raw-body to populate request.rawBody
+      },
+      preHandler: [verifyMetaSignature]
+    },
+    async (request, reply) => {
     const start = process.hrtime();
     
     // Domain modeling: Convert raw HTTP request to abstract Event

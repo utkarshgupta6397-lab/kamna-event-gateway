@@ -8,6 +8,7 @@ const envSchema = z.object({
   HOST: z.string().default('0.0.0.0'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   DATABASE_URL: z.string().default('./data/events.db'),
+  META_APP_SECRET: z.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);
