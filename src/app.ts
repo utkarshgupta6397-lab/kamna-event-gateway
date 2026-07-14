@@ -1,5 +1,6 @@
 import Fastify, { FastifyInstance } from 'fastify';
 import { env } from './config/env';
+import { eventRoutes } from './routes/events';
 
 export const buildApp = (): FastifyInstance => {
   const app = Fastify({
@@ -24,6 +25,8 @@ export const buildApp = (): FastifyInstance => {
       version: '0.0.1',
     };
   });
+
+  app.register(eventRoutes, { prefix: '/events' });
 
   return app;
 };
