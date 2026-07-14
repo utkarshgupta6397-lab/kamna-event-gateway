@@ -56,6 +56,7 @@ export const buildApp = (): FastifyInstance => {
       status: 'ok',
       service: 'kamna-event-gateway',
       version: '0.0.1',
+      uptime: process.uptime(),
     };
   });
 
