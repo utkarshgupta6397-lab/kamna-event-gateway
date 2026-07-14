@@ -2,6 +2,7 @@ import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import * as eventService from '../services/eventService';
 import * as destinationService from '../services/destinationService';
 import * as deliveryService from '../services/deliveryService';
+import { dispatchDelivery } from '../services/dispatcherService';
 import { HttpEventNormalizer } from '../domain/event';
 import { DeliveryPlanner } from '../domain/delivery';
 
@@ -29,16 +30,22 @@ export const eventRoutes: FastifyPluginAsync = async (app: FastifyInstance) => {
     const plannedDeliveries = DeliveryPlanner.planDeliveries(domainEvent, destinations);
     
     if (plannedDeliveries.length > 0) {
-      await deliveryService.createDeliveries(plannedDeliveries);
+      const insertedDeliveries = await deliveryService.createDeliveries(plannedDeliveries);
+      
+      // Auto-Dispatch Phase (Synchronous Fan-out)
+      // We dispatch all created deliveries concurrently
+      await Promise.all(
+        insertedDeliveries.map((delivery) => dispatchDelivery(delivery.id))
+      );
     }
 
     const diff = process.hrtime(start);
     const processingTimeMs = Math.round((diff[0] * 1e9 + diff[1]) / 1e6);
     
-    request.log.info({ processingTimeMs, eventId: domainEvent.eventId }, 'Event normalized and stored');
+    request.log.info({ processingTimeMs, eventId: domainEvent.eventId }, 'Event normalized, stored, and auto-dispatched');
 
-    // Maintain backwards compatibility with API contract
-    return reply.status(201).send({
+    // Return 200 OK as per MVP requirements
+    return reply.status(200).send({
       success: true,
       requestId: domainEvent.eventId,
     });

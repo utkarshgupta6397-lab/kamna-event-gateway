@@ -73,8 +73,50 @@ cp .env.example .env
 ## Deployment Strategy
 Kamna Event Gateway is designed to be deployed as a stateless containerized application. It can scale horizontally behind a standard load balancer. Ensure the `NODE_ENV` is set to `production` and that Pino logging is shipped to a central aggregator.
 
+## Integration Testing (MVP Auto Dispatch)
+
+The MVP operates as a transparent fan-out proxy without background queues. You can test the end-to-end integration using the built-in debug endpoints.
+
+### 1. Register Debug Destinations
+Create two downstream configurations pointing to the local debug endpoints:
+
+```bash
+# Register Receiver A
+curl -X POST http://localhost:8080/destinations \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Debug A",
+    "url": "http://localhost:8080/debug/receiver/a",
+    "type": "webhook",
+    "enabled": true
+  }'
+
+# Register Receiver B
+curl -X POST http://localhost:8080/destinations \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Debug B",
+    "url": "http://localhost:8080/debug/receiver/b",
+    "type": "webhook",
+    "enabled": true
+  }'
+```
+
+### 2. Trigger an Event
+Send a payload to the ingest endpoint:
+
+```bash
+curl -X POST http://localhost:8080/events/test \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Hello WhatsApp Mirroring"}'
+```
+
+### 3. Verify
+Check your terminal logs running the Fastify server. You should see:
+1. `Event normalized, stored, and auto-dispatched`
+2. `Debug Receiver A invoked`
+3. `Debug Receiver B invoked`
+
+You can also fetch `GET /deliveries` to verify the execution outcomes.
+
 ## Future Roadmap
-- Implementation of dynamic event routing rules.
-- Robust retry and replay mechanisms.
-- Forwarding capabilities to external consumers.
-- Horizontal scaling and rate limiting.

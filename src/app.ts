@@ -4,6 +4,7 @@ import { eventRoutes } from './routes/events';
 import { destinationRoutes } from './routes/destinations';
 import { deliveryRoutes } from './routes/deliveries';
 import { dispatcherRoutes } from './routes/dispatcher';
+import { debugRoutes } from './routes/debug';
 import { TransportRegistry } from './domain/transport';
 import { HttpTransport } from './transports/httpTransport';
 
@@ -37,6 +38,7 @@ export const buildApp = (): FastifyInstance => {
   app.register(destinationRoutes, { prefix: '/destinations' });
   app.register(deliveryRoutes, { prefix: '/deliveries' });
   app.register(dispatcherRoutes, { prefix: '/dispatch' });
+  app.register(debugRoutes, { prefix: '/debug' });
 
   return app;
 };
