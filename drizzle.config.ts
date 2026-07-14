@@ -4,10 +4,11 @@ import { env } from './src/config/env';
 export default defineConfig({
   schema: './src/db/schema.ts',
   out: './drizzle',
-  driver: 'better-sqlite',
+  dialect: 'sqlite',
   dbCredentials: {
     url: env.DATABASE_URL,
   },
   verbose: true,
   strict: true,
 });
+
