@@ -57,6 +57,8 @@ export const buildApp = (): FastifyInstance => {
       service: 'kamna-event-gateway',
       version: '0.0.1',
       uptime: process.uptime(),
+      nodeVersion: process.version,
+      environment: process.env.NODE_ENV || 'development'
     };
   });
 
@@ -69,7 +71,7 @@ export const buildApp = (): FastifyInstance => {
 
   // Serve Frontend
   app.register(fastifyStatic, {
-    root: path.join(__dirname, '../../ui/dist'),
+    root: path.join(__dirname, '../ui/dist'),
     wildcard: false,
   });
 
