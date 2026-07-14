@@ -11,6 +11,7 @@ import { HttpTransport } from './transports/httpTransport';
 export const buildApp = (): FastifyInstance => {
   // Register default transports
   TransportRegistry.register('webhook', new HttpTransport());
+  TransportRegistry.register('http', new HttpTransport());
   const app = Fastify({
     logger: {
       level: env.NODE_ENV === 'development' ? 'debug' : 'info',

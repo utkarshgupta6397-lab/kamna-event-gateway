@@ -22,7 +22,7 @@ export const eventRoutes: FastifyPluginAsync = async (app: FastifyInstance) => {
     const enabledDestinations = await destinationService.getEnabledDestinations();
     const destinations = enabledDestinations.map(d => ({
       ...d,
-      type: d.type as 'webhook' | 'kafka',
+      type: d.type as 'webhook' | 'kafka' | 'http',
       headers: d.headers as Record<string, string> | null,
       authentication: d.authentication as import('../domain/destination').AuthenticationConfig | null,
     }));

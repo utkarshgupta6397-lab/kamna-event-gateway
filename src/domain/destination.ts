@@ -1,4 +1,4 @@
-export type DestinationType = 'webhook' | 'kafka';
+export type DestinationType = 'webhook' | 'kafka' | 'http';
 
 export interface AuthenticationConfig {
   type: 'none' | 'basic' | 'bearer';

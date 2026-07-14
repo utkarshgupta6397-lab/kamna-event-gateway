@@ -82,23 +82,27 @@ Create two downstream configurations pointing to the local debug endpoints:
 
 ```bash
 # Register Receiver A
-curl -X POST http://localhost:8080/destinations \
+curl -X POST http://localhost:3004/destinations \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "Debug A",
-    "url": "http://localhost:8080/debug/receiver/a",
-    "type": "webhook",
-    "enabled": true
+    "name": "Receiver A",
+    "type": "http",
+    "url": "http://localhost:3004/debug/receiver/a",
+    "enabled": true,
+    "priority": 1,
+    "timeoutMs": 5000
   }'
 
 # Register Receiver B
-curl -X POST http://localhost:8080/destinations \
+curl -X POST http://localhost:3004/destinations \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "Debug B",
-    "url": "http://localhost:8080/debug/receiver/b",
-    "type": "webhook",
-    "enabled": true
+    "name": "Receiver B",
+    "type": "http",
+    "url": "http://localhost:3004/debug/receiver/b",
+    "enabled": true,
+    "priority": 2,
+    "timeoutMs": 5000
   }'
 ```
 
@@ -106,7 +110,7 @@ curl -X POST http://localhost:8080/destinations \
 Send a payload to the ingest endpoint:
 
 ```bash
-curl -X POST http://localhost:8080/events/test \
+curl -X POST http://localhost:3004/events/test \
   -H "Content-Type: application/json" \
   -d '{"message": "Hello WhatsApp Mirroring"}'
 ```

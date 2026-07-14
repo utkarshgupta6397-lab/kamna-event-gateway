@@ -6,7 +6,7 @@ import { DestinationType, AuthenticationConfig } from '../domain/destination';
 // We do manual casting because Fastify doesn't natively integrate Zod types at this basic route level without plugins.
 const createDestinationSchema = z.object({
   name: z.string(),
-  type: z.enum(['webhook', 'kafka']).optional(),
+  type: z.enum(['webhook', 'kafka', 'http']).optional(),
   url: z.string().url(),
   enabled: z.boolean().optional(),
   priority: z.number().optional(),
