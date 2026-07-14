@@ -2,11 +2,11 @@ import { useQuery } from '@tanstack/react-query';
 import { Settings as SettingsIcon, Server, Database, Code, Activity, Terminal } from 'lucide-react';
 
 const fetchHealth = () => fetch('/health').then(res => res.json());
-const fetchEvents = () => fetch('/api/v1/events').then(res => res.json());
+const fetchEvents = () => fetch('/api/v1/events').then(res => res.json().then(data => data.events));
 
 export default function Settings() {
   const { data: health, isLoading: loadingHealth } = useQuery({ queryKey: ['health'], queryFn: fetchHealth });
-  const { data: eventsData, isLoading: loadingEvents } = useQuery({ queryKey: ['events'], queryFn: fetchEvents });
+  const { data: events = [], isLoading: loadingEvents } = useQuery({ queryKey: ['events'], queryFn: fetchEvents });
 
   const formatUptime = (seconds?: number) => {
     if (!seconds) return '--';
@@ -18,7 +18,7 @@ export default function Settings() {
 
   const getDatabaseStatus = () => {
     if (loadingEvents) return 'Checking...';
-    return eventsData ? 'Connected (SQLite via Drizzle ORM)' : 'Disconnected';
+    return events ? 'Connected (SQLite via Drizzle ORM)' : 'Disconnected';
   };
 
   return (

@@ -72,12 +72,15 @@ export const buildApp = (): FastifyInstance => {
   // Serve Frontend
   app.register(fastifyStatic, {
     root: path.join(__dirname, '../ui/dist'),
-    wildcard: false,
+    
   });
 
-  // Catch-all route to serve SPA index.html for non-API requests
-  app.get('/*', (_request, reply) => {
-    reply.sendFile('index.html');
+  app.setNotFoundHandler((request, reply) => {
+    if (request.url.startsWith('/api')) {
+      reply.status(404).send({ error: 'API route not found' });
+    } else {
+      reply.sendFile('index.html');
+    }
   });
 
   return app;

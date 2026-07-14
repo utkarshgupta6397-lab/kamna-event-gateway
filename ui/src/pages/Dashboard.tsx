@@ -9,9 +9,9 @@ function cn(...inputs: ClassValue[]) {
 
 // Fetchers
 const fetchHealth = () => fetch('/health').then(res => res.json());
-const fetchEvents = () => fetch('/api/v1/events').then(res => res.json());
-const fetchDeliveries = () => fetch('/api/v1/deliveries').then(res => res.json());
-const fetchDestinations = () => fetch('/api/v1/destinations').then(res => res.json());
+const fetchEvents = () => fetch('/api/v1/events').then(res => res.json().then(data => data.events));
+const fetchDeliveries = () => fetch('/api/v1/deliveries').then(res => res.json().then(data => data.deliveries));
+const fetchDestinations = () => fetch('/api/v1/destinations').then(res => res.json().then(data => data.destinations));
 
 // UI Components
 function Card({ className, children }: { className?: string; children: React.ReactNode }) {
@@ -28,17 +28,13 @@ function Skeleton({ className }: { className?: string }) {
 
 export default function Dashboard() {
   const { data: health, isLoading: loadingHealth } = useQuery({ queryKey: ['health'], queryFn: fetchHealth, refetchInterval: 5000 });
-  const { data: eventsData, isLoading: loadingEvents } = useQuery({ queryKey: ['events'], queryFn: fetchEvents, refetchInterval: 5000 });
-  const { data: deliveriesData, isLoading: loadingDeliveries } = useQuery({ queryKey: ['deliveries'], queryFn: fetchDeliveries, refetchInterval: 5000 });
-  const { data: destinationsData, isLoading: loadingDestinations } = useQuery({ queryKey: ['destinations'], queryFn: fetchDestinations, refetchInterval: 5000 });
+  const { data: events = [], isLoading: loadingEvents } = useQuery({ queryKey: ['events'], queryFn: fetchEvents, refetchInterval: 5000 });
+  const { data: deliveries = [], isLoading: loadingDeliveries } = useQuery({ queryKey: ['deliveries'], queryFn: fetchDeliveries, refetchInterval: 5000 });
+  const { data: destinations = [], isLoading: loadingDestinations } = useQuery({ queryKey: ['destinations'], queryFn: fetchDestinations, refetchInterval: 5000 });
 
   const isLoading = loadingHealth || loadingEvents || loadingDeliveries || loadingDestinations;
 
   // Derived Metrics
-  const events = eventsData?.events || [];
-  const deliveries = deliveriesData?.deliveries || [];
-  const destinations = destinationsData?.destinations || [];
-  
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
   
@@ -65,7 +61,7 @@ export default function Dashboard() {
 
   const getDatabaseStatus = () => {
     if (loadingEvents) return 'Checking...';
-    return eventsData ? 'Connected (SQLite)' : 'Disconnected';
+    return events ? 'Connected (SQLite via Drizzle ORM)' : 'Disconnected';
   };
 
   if (isLoading && !health) {

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { ErrorBoundary } from 'react-error-boundary';
 import { LayoutDashboard, Zap, Send, MapPin, Settings as SettingsIcon, Info, Moon, Sun, Menu } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -10,6 +11,7 @@ function cn(...inputs: ClassValue[]) {
 
 export default function DashboardLayout() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isDark, setIsDark] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -101,8 +103,25 @@ export default function DashboardLayout() {
           </div>
         </header>
 
-        <main className="flex-1 overflow-auto bg-muted/40">
-          <Outlet />
+        <main className="flex-1 overflow-auto bg-muted/40 relative flex flex-col">
+          <ErrorBoundary
+            key={location.pathname}
+            fallbackRender={({ error, resetErrorBoundary }: { error: any, resetErrorBoundary: any }) => (
+              <div className="p-8 max-w-3xl mx-auto mt-10 border rounded-lg bg-destructive/10 text-destructive">
+                <h2 className="text-xl font-bold mb-4">Rendering Error</h2>
+                <pre className="text-sm overflow-auto mb-4 p-4 bg-background rounded-md">
+                  {error?.message || String(error)}
+                  {'\n'}
+                  {error.stack}
+                </pre>
+                <button onClick={resetErrorBoundary} className="px-4 py-2 bg-destructive text-destructive-foreground rounded-md text-sm">
+                  Try Again
+                </button>
+              </div>
+            )}
+          >
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
       
