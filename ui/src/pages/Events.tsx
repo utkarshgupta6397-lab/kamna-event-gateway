@@ -108,7 +108,7 @@ export default function Events() {
   };
 
   return (
-    <div className="flex h-full flex-col relative">
+    <div className="flex h-full flex-col relative animate-in fade-in slide-in-from-bottom-2 duration-300">
       {/* Header */}
       <div className="p-8 pb-4 flex items-center justify-between">
         <div>
@@ -144,9 +144,21 @@ export default function Events() {
           {/* Table */}
           <div className="flex-1 overflow-auto">
             {isLoading ? (
-              <div className="flex items-center justify-center h-64 text-muted-foreground">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-3"></div>
-                Loading events...
+              <div className="w-full">
+                <div className="border-b px-6 py-4 flex gap-4">
+                  <div className="h-4 w-32 bg-muted animate-pulse rounded" />
+                  <div className="h-4 w-48 bg-muted animate-pulse rounded" />
+                  <div className="h-4 w-24 bg-muted animate-pulse rounded" />
+                </div>
+                {[...Array(10)].map((_, i) => (
+                  <div key={i} className="border-b px-6 py-4 flex items-center gap-6">
+                    <div className="h-4 w-40 bg-muted animate-pulse rounded" />
+                    <div className="h-4 w-48 bg-muted animate-pulse rounded" />
+                    <div className="h-6 w-24 bg-muted animate-pulse rounded-full" />
+                    <div className="h-4 w-32 bg-muted animate-pulse rounded" />
+                    <div className="h-6 w-20 bg-muted animate-pulse rounded-full" />
+                  </div>
+                ))}
               </div>
             ) : filteredEvents.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-64 text-center p-8">

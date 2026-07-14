@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from 'sonner';
 
 import DashboardLayout from './layouts/DashboardLayout';
 import Dashboard from './pages/Dashboard';
@@ -25,6 +26,7 @@ export default function App() {
             <Route path="about" element={<About />} />
           </Route>
         </Routes>
+        <Toaster position="bottom-right" theme="system" richColors />
       </BrowserRouter>
     </QueryClientProvider>
   );

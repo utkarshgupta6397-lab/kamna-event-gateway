@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Outlet, NavLink } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Zap, Send, MapPin, Settings as SettingsIcon, Info, Moon, Sun, Menu } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -9,8 +9,25 @@ function cn(...inputs: ClassValue[]) {
 }
 
 export default function DashboardLayout() {
+  const navigate = useNavigate();
   const [isDark, setIsDark] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // CMD/CTRL + K to open search or CMD/CTRL + 1-4 for navigation
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey) {
+        switch (e.key) {
+          case '1': e.preventDefault(); navigate('/'); break;
+          case '2': e.preventDefault(); navigate('/events'); break;
+          case '3': e.preventDefault(); navigate('/deliveries'); break;
+          case '4': e.preventDefault(); navigate('/destinations'); break;
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [navigate]);
 
   const toggleTheme = () => {
     setIsDark(!isDark);
@@ -38,20 +55,27 @@ export default function DashboardLayout() {
           <span className="font-bold text-lg tracking-tight">Kamna Gateway</span>
         </div>
         <nav className="flex flex-col gap-2 p-4">
-          {navItems.map((item) => (
+          {navItems.map((item, index) => (
             <NavLink
               key={item.path}
               to={item.path}
               onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
                 cn(
-                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
+                  "flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
                   isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground"
                 )
               }
             >
-              <item.icon className="h-4 w-4" />
-              {item.name}
+              <div className="flex items-center gap-3">
+                <item.icon className="h-4 w-4" />
+                {item.name}
+              </div>
+              {index < 4 && (
+                <kbd className="hidden lg:inline-flex items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
+                  <span className="text-xs">⌘</span>{index + 1}
+                </kbd>
+              )}
             </NavLink>
           ))}
         </nav>

@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { toast } from 'sonner';
 import { 
   Plus, Edit2, Trash2, X, MapPin, Power, PowerOff, Save, Key, Network,
   Server, Shield
@@ -91,7 +92,9 @@ export default function Destinations() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['destinations'] });
       setDrawerOpen(false);
-    }
+      toast.success('Destination created successfully');
+    },
+    onError: (e: any) => toast.error(e.message || 'Failed to create destination')
   });
 
   const updateMut = useMutation({
@@ -99,19 +102,27 @@ export default function Destinations() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['destinations'] });
       setDrawerOpen(false);
-    }
+      toast.success('Destination updated successfully');
+    },
+    onError: (e: any) => toast.error(e.message || 'Failed to update destination')
   });
 
   const deleteMut = useMutation({
     mutationFn: deleteDestination,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['destinations'] });
-    }
+      toast.success('Destination deleted');
+    },
+    onError: (e: any) => toast.error(e.message || 'Failed to delete destination')
   });
 
   const toggleStatusMut = useMutation({
     mutationFn: updateDestination,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['destinations'] })
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ['destinations'] });
+      toast.success(`Destination ${data.enabled ? 'enabled' : 'disabled'}`);
+    },
+    onError: (e: any) => toast.error(e.message || 'Failed to toggle status')
   });
 
   // --- Form Setup ---
@@ -201,7 +212,7 @@ export default function Destinations() {
   };
 
   return (
-    <div className="flex h-full flex-col relative">
+    <div className="flex h-full flex-col relative animate-in fade-in slide-in-from-bottom-2 duration-300">
       {/* Header */}
       <div className="p-8 pb-4 flex items-center justify-between">
         <div>
