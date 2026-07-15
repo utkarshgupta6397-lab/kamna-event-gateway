@@ -82,7 +82,7 @@ export default function Destinations() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
 
-  const { data: destinations = [], isLoading } = useQuery({
+  const { data: destinations = [], isLoading, isError, error } = useQuery({
     queryKey: ['destinations'],
     queryFn: fetchDestinations,
   });
@@ -120,7 +120,7 @@ export default function Destinations() {
     mutationFn: updateDestination,
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['destinations'] });
-      toast.success(`Destination ${data.enabled ? 'enabled' : 'disabled'}`);
+      toast.success(`Destination ${data.destination?.enabled ? 'enabled' : 'disabled'}`);
     },
     onError: (e: any) => toast.error(e.message || 'Failed to toggle status')
   });
@@ -235,6 +235,19 @@ export default function Destinations() {
             <div className="p-8 flex items-center justify-center text-muted-foreground">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-3"></div>
               Loading registry...
+            </div>
+          ) : isError ? (
+            <div className="flex flex-col items-center justify-center p-16 text-center">
+              <div className="h-16 w-16 bg-destructive/10 rounded-full flex items-center justify-center mb-6">
+                <Network className="h-8 w-8 text-destructive" />
+              </div>
+              <h2 className="text-xl font-semibold mb-2">Failed to load destinations</h2>
+              <p className="text-muted-foreground max-w-md mb-6 text-sm">
+                Could not reach the API. If you are using an adblocker (like Brave Shields or uBlock Origin), it might be blocking the request. Please disable it for localhost.
+              </p>
+              <p className="text-xs text-muted-foreground font-mono bg-muted p-2 rounded max-w-md break-words">
+                {(error as Error)?.message || 'Network Error'}
+              </p>
             </div>
           ) : destinations.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-16 text-center">
@@ -365,8 +378,8 @@ export default function Destinations() {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
-          <form id="dest-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
             
             {/* General Section */}
             <div className="space-y-4">
@@ -561,31 +574,30 @@ export default function Destinations() {
               )}
             </div>
 
-          </form>
-        </div>
+          </div>
 
-        <div className="border-t bg-muted/20 p-6 flex justify-end gap-3">
-          <button 
-            type="button"
-            onClick={closeDrawer}
-            className="px-4 py-2 border rounded-md text-sm font-medium hover:bg-muted transition-colors"
-          >
-            Cancel
-          </button>
-          <button 
-            type="submit"
-            form="dest-form"
-            disabled={createMut.isPending || updateMut.isPending}
-            className="px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-md text-sm font-medium inline-flex items-center gap-2 transition-colors disabled:opacity-50"
-          >
-            {createMut.isPending || updateMut.isPending ? (
-              <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <Save className="w-4 h-4" />
-            )}
-            {editingId ? 'Save Changes' : 'Create Destination'}
-          </button>
-        </div>
+          <div className="border-t bg-muted/20 p-6 flex justify-end gap-3">
+            <button 
+              type="button"
+              onClick={closeDrawer}
+              className="px-4 py-2 border rounded-md text-sm font-medium hover:bg-muted transition-colors"
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit"
+              disabled={createMut.isPending || updateMut.isPending}
+              className="px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-md text-sm font-medium inline-flex items-center gap-2 transition-colors disabled:opacity-50"
+            >
+              {createMut.isPending || updateMut.isPending ? (
+                <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+              {editingId ? 'Save Changes' : 'Create Destination'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
