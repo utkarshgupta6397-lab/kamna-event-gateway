@@ -5,34 +5,26 @@ echo "=================================="
 echo " Kamna Event Gateway Deployment"
 echo "=================================="
 
-cd /root/kamna-event-gateway
-
-echo "Updating repository..."
-git fetch origin
-git checkout main
-git reset --hard origin/main
-git clean -fd
-
-echo "Installing backend..."
+echo "Installing backend dependencies..."
 npm install
 
 echo "Building backend..."
 npm run build
 
-echo "Running database..."
+echo "Running database migrations..."
 npm run db:push
 
-echo "Installing frontend..."
+echo "Installing frontend dependencies..."
 cd ui
 
 npm install
 
+echo "Building frontend..."
 npm run build
 
 cd ..
 
-echo "Restarting Gateway..."
+echo "Restarting PM2..."
 pm2 restart kamna-event-gateway --update-env
 
-echo ""
-echo "Deployment Successful!"
+echo "Deployment completed successfully!"
