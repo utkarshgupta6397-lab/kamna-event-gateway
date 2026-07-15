@@ -2,7 +2,13 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { env } from '../config/env';
 import { getAuthProvider } from './index';
 
-// Prefix paths that should always bypass authentication
+// Exact URLs that are always public (no auth required)
+const PUBLIC_EXACT = new Set([
+  '/',
+  '/index.html',
+]);
+
+// URL prefixes that are always public
 const PUBLIC_PREFIXES = [
   '/health',
   '/webhooks',
@@ -15,8 +21,8 @@ const PUBLIC_PREFIXES = [
 export const authMiddleware = async (request: FastifyRequest, reply: FastifyReply) => {
   const url = request.url;
 
-  // 1. Check if route is public
-  if (PUBLIC_PREFIXES.some(prefix => url.startsWith(prefix))) {
+  // 1. Check if route is public (exact match or prefix match)
+  if (PUBLIC_EXACT.has(url) || PUBLIC_PREFIXES.some(prefix => url.startsWith(prefix))) {
     return;
   }
 
