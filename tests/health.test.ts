@@ -10,10 +10,13 @@ describe('Health Endpoint', () => {
     });
 
     expect(response.statusCode).toBe(200);
-    expect(response.json()).toEqual({
+    expect(response.json()).toMatchObject({
       status: 'ok',
       service: 'kamna-event-gateway',
       version: '0.0.1',
     });
+    expect(response.json()).toHaveProperty('uptime');
+    expect(response.json()).toHaveProperty('environment');
+    expect(response.json()).toHaveProperty('nodeVersion');
   });
 });

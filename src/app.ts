@@ -11,6 +11,7 @@ import fastifyRateLimit from '@fastify/rate-limit';
 import fastifyRawBody from 'fastify-raw-body';
 import fastifyStatic from '@fastify/static';
 import path from 'path';
+import fs from 'fs';
 import { authMiddleware } from './security/authMiddleware';
 
 export const buildApp = (): FastifyInstance => {
@@ -73,17 +74,21 @@ export const buildApp = (): FastifyInstance => {
   app.register(dispatcherRoutes, { prefix: '/api/v1/dispatch' });
   app.register(debugRoutes, { prefix: '/api/v1/debug' });
 
-  // Serve Frontend
-  app.register(fastifyStatic, {
-    root: path.join(__dirname, '../ui/dist'),
-    
-  });
+  // Serve Frontend conditionally
+  const uiDistPath = path.join(__dirname, '../ui/dist');
+  if (fs.existsSync(uiDistPath)) {
+    app.register(fastifyStatic, {
+      root: uiDistPath,
+    });
+  }
 
   app.setNotFoundHandler((request, reply) => {
     if (request.url.startsWith('/api')) {
       reply.status(404).send({ error: 'API route not found' });
-    } else {
+    } else if (fs.existsSync(uiDistPath)) {
       reply.sendFile('index.html');
+    } else {
+      reply.status(404).send({ error: 'Not found' });
     }
   });
 
