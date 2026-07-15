@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { ErrorBoundary } from 'react-error-boundary';
-import { LayoutDashboard, Zap, Send, MapPin, Settings as SettingsIcon, Info, Moon, Sun, Menu } from 'lucide-react';
+import { LayoutDashboard, Zap, Send, MapPin, Settings as SettingsIcon, Info, Moon, Sun, Menu, LogOut } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -34,6 +34,14 @@ export default function DashboardLayout() {
   const toggleTheme = () => {
     setIsDark(!isDark);
     document.documentElement.classList.toggle('dark');
+  };
+
+  const handleLogout = () => {
+    // Navigating with invalid credentials clears the browser's Basic Auth cache
+    const url = new URL(window.location.href);
+    url.username = 'logout';
+    url.password = 'logout';
+    window.location.href = url.toString();
   };
 
   const navItems = [
@@ -93,10 +101,18 @@ export default function DashboardLayout() {
             <Menu className="h-6 w-6" />
           </button>
           
-          <div className="flex flex-1 justify-end">
+          <div className="flex flex-1 justify-end gap-2">
+            <button
+              onClick={handleLogout}
+              className="rounded-md p-2 hover:bg-accent hover:text-accent-foreground flex items-center justify-center"
+              title="Log Out"
+            >
+              <LogOut className="h-5 w-5" />
+            </button>
             <button
               onClick={toggleTheme}
-              className="rounded-md p-2 hover:bg-accent hover:text-accent-foreground"
+              className="rounded-md p-2 hover:bg-accent hover:text-accent-foreground flex items-center justify-center"
+              title="Toggle Theme"
             >
               {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </button>
