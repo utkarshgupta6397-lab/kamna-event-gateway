@@ -18,4 +18,12 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            /root/kamna-event-gateway/deploy.sh
+              cd /root/kamna-event-gateway
+            
+              git fetch origin
+              git checkout main
+              git reset --hard origin/main
+              git clean -fd
+            
+              chmod +x deploy.sh
+              ./deploy.sh
