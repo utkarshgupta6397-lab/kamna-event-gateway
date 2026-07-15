@@ -12,9 +12,10 @@ const envSchema = z.object({
   
   // Security
   GATEWAY_AUTH_ENABLED: z.string().transform(val => val !== 'false').default('true'),
-  GATEWAY_AUTH_PROVIDER: z.enum(['basic', 'jwt']).default('basic'),
+  GATEWAY_AUTH_PROVIDER: z.enum(['basic', 'jwt']).default('jwt'),
   GATEWAY_BASIC_USERNAME: z.string().optional(),
   GATEWAY_BASIC_PASSWORD: z.string().optional(),
+  GATEWAY_JWT_SECRET: z.string().default('kamna-dev-secret-key-12345'), // Default for local dev only
 });
 
 export const env = envSchema.parse(process.env);

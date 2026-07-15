@@ -8,10 +8,12 @@ function cn(...inputs: ClassValue[]) {
 }
 
 // Fetchers
-const fetchHealth = () => fetch('/health').then(res => res.json());
-const fetchEvents = () => fetch('/api/v1/events').then(res => res.json().then(data => data.events));
-const fetchDeliveries = () => fetch('/api/v1/deliveries').then(res => res.json().then(data => data.deliveries));
-const fetchDestinations = () => fetch('/api/v1/destinations').then(res => res.json().then(data => data.destinations));
+import { apiFetch } from '../utils/api';
+
+const fetchHealth = () => apiFetch('/health').then(res => res.json());
+const fetchEvents = () => apiFetch('/api/v1/events').then(res => res.json().then(data => data.events));
+const fetchDeliveries = () => apiFetch('/api/v1/deliveries').then(res => res.json().then(data => data.deliveries));
+const fetchDestinations = () => apiFetch('/api/v1/destinations').then(res => res.json().then(data => data.destinations));
 
 // UI Components
 function Card({ className, children }: { className?: string; children: React.ReactNode }) {

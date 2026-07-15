@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { apiFetch } from '../utils/api';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -19,13 +20,13 @@ function cn(...inputs: ClassValue[]) {
 const API_BASE = '/api/v1/destinations';
 
 const fetchDestinations = async () => {
-  const res = await fetch(API_BASE);
+  const res = await apiFetch(API_BASE);
   if (!res.ok) throw new Error('Failed to fetch destinations');
   return res.json().then(data => data.destinations);
 };
 
 const createDestination = async (data: any) => {
-  const res = await fetch(API_BASE, {
+  const res = await apiFetch(API_BASE, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -35,18 +36,18 @@ const createDestination = async (data: any) => {
 };
 
 const updateDestination = async ({ id, data }: { id: number; data: any }) => {
-  const res = await fetch(`${API_BASE}/${id}`, {
+  const res = await apiFetch(`${API_BASE}/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error('Failed to update');
+  if (!res.ok) throw new Error('Failed to update destination');
   return res.json();
 };
 
 const deleteDestination = async (id: number) => {
-  const res = await fetch(`${API_BASE}/${id}`, { method: 'DELETE' });
-  if (!res.ok) throw new Error('Failed to delete');
+  const res = await apiFetch(`${API_BASE}/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('Failed to delete destination');
   return res.json();
 };
 

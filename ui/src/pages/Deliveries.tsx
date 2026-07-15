@@ -13,23 +13,28 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+import { apiFetch } from '../utils/api';
+
 // --- API Fetchers ---
 const fetchDeliveries = async () => {
-  const res = await fetch('/api/v1/deliveries');
+  const res = await apiFetch('/api/v1/deliveries');
   if (!res.ok) throw new Error('Failed to fetch deliveries');
-  return res.json().then(data => data.deliveries);
+  const data = await res.json();
+  return data.deliveries;
 };
 
 const fetchDestinations = async () => {
-  const res = await fetch('/api/v1/destinations');
+  const res = await apiFetch('/api/v1/destinations');
   if (!res.ok) throw new Error('Failed to fetch destinations');
-  return res.json().then(data => data.destinations);
+  const data = await res.json();
+  return data.destinations;
 };
 
 const fetchEvents = async () => {
-  const res = await fetch('/api/v1/events');
+  const res = await apiFetch('/api/v1/events');
   if (!res.ok) throw new Error('Failed to fetch events');
-  return res.json().then(data => data.events);
+  const data = await res.json();
+  return data.events;
 };
 
 export default function Deliveries() {

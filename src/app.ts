@@ -5,6 +5,7 @@ import { destinationRoutes } from './routes/destinations';
 import { deliveryRoutes } from './routes/deliveries';
 import { dispatcherRoutes } from './routes/dispatcher';
 import { debugRoutes } from './routes/debug';
+import { authRoutes } from './routes/auth';
 import { TransportRegistry } from './domain/transport';
 import { HttpTransport } from './transports/httpTransport';
 import fastifyRateLimit from '@fastify/rate-limit';
@@ -68,6 +69,7 @@ export const buildApp = (): FastifyInstance => {
   app.addHook('onRequest', authMiddleware);
 
   // Prefix all API routes with /api/v1
+  app.register(authRoutes, { prefix: '/api/v1/auth' });
   app.register(eventRoutes, { prefix: '/api/v1/events' });
   app.register(destinationRoutes, { prefix: '/api/v1/destinations' });
   app.register(deliveryRoutes, { prefix: '/api/v1/deliveries' });

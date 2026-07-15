@@ -4,6 +4,7 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { LayoutDashboard, Zap, Send, MapPin, Settings as SettingsIcon, Info, Moon, Sun, Menu, LogOut } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { useAuth } from '../contexts/AuthContext';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -14,16 +15,17 @@ export default function DashboardLayout() {
   const location = useLocation();
   const [isDark, setIsDark] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { logout } = useAuth();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // CMD/CTRL + K to open search or CMD/CTRL + 1-4 for navigation
       if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey) {
         switch (e.key) {
-          case '1': e.preventDefault(); navigate('/'); break;
-          case '2': e.preventDefault(); navigate('/events'); break;
-          case '3': e.preventDefault(); navigate('/deliveries'); break;
-          case '4': e.preventDefault(); navigate('/destinations'); break;
+          case '1': e.preventDefault(); navigate('/dashboard'); break;
+          case '2': e.preventDefault(); navigate('/dashboard/events'); break;
+          case '3': e.preventDefault(); navigate('/dashboard/deliveries'); break;
+          case '4': e.preventDefault(); navigate('/dashboard/destinations'); break;
         }
       }
     };
@@ -38,26 +40,16 @@ export default function DashboardLayout() {
 
   const handleLogout = () => {
     // A fetch request with intentionally invalid credentials
-    // forces the browser to overwrite its cached Basic Auth credentials.
-    fetch('/', {
-      headers: {
-        'Authorization': 'Basic ' + btoa('logout:logout')
-      }
-    }).then(() => {
-      // Reload the page cleanly without credentials in the URL
-      window.location.href = '/';
-    }).catch(() => {
-      window.location.href = '/';
-    });
+    logout();
   };
 
   const navItems = [
-    { name: 'Dashboard', path: '/', icon: LayoutDashboard },
-    { name: 'Events', path: '/events', icon: Zap },
-    { name: 'Deliveries', path: '/deliveries', icon: Send },
-    { name: 'Destinations', path: '/destinations', icon: MapPin },
-    { name: 'Settings', path: '/settings', icon: SettingsIcon },
-    { name: 'About', path: '/about', icon: Info },
+    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+    { name: 'Events', path: '/dashboard/events', icon: Zap },
+    { name: 'Deliveries', path: '/dashboard/deliveries', icon: Send },
+    { name: 'Destinations', path: '/dashboard/destinations', icon: MapPin },
+    { name: 'Settings', path: '/dashboard/settings', icon: SettingsIcon },
+    { name: 'About', path: '/dashboard/about', icon: Info },
   ];
 
   return (

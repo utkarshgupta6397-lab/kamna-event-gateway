@@ -3,3 +3,6 @@ dist/
 .env
 coverage/
 .DS_Store
+data/
+login_res.json
+ui/run-*.cjs

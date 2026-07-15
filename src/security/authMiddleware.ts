@@ -15,7 +15,8 @@ const PUBLIC_PREFIXES = [
   '/.well-known',
   '/favicon',
   '/assets',
-  '/api/v1/events/test' // Making the test ingestion webhook public as per clarification
+  '/api/v1/events/test', // Making the test ingestion webhook public as per clarification
+  '/api/v1/auth/login'   // Login endpoint must be public
 ];
 
 export const authMiddleware = async (request: FastifyRequest, reply: FastifyReply) => {
