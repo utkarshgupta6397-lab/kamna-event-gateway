@@ -37,11 +37,18 @@ export default function DashboardLayout() {
   };
 
   const handleLogout = () => {
-    // Navigating with invalid credentials clears the browser's Basic Auth cache
-    const url = new URL(window.location.href);
-    url.username = 'logout';
-    url.password = 'logout';
-    window.location.href = url.toString();
+    // A fetch request with intentionally invalid credentials
+    // forces the browser to overwrite its cached Basic Auth credentials.
+    fetch('/', {
+      headers: {
+        'Authorization': 'Basic ' + btoa('logout:logout')
+      }
+    }).then(() => {
+      // Reload the page cleanly without credentials in the URL
+      window.location.href = '/';
+    }).catch(() => {
+      window.location.href = '/';
+    });
   };
 
   const navItems = [
