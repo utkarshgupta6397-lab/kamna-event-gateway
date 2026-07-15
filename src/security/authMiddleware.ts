@@ -29,8 +29,6 @@ export const authMiddleware = async (request: FastifyRequest, reply: FastifyRepl
   const provider = getAuthProvider();
   const isAuthenticated = await provider.authenticate(request);
 
-  console.log(`[AUTH] URL: ${url} | AuthEnabled: ${env.GATEWAY_AUTH_ENABLED} | IsAuthenticated: ${isAuthenticated}`);
-
   if (isAuthenticated) {
     return;
   }
@@ -38,10 +36,7 @@ export const authMiddleware = async (request: FastifyRequest, reply: FastifyRepl
   // 4. Handle Unauthorized
   const challengeHeader = provider.getChallengeHeader();
   if (challengeHeader) {
-    console.log(`[AUTH] Sending 401 with WWW-Authenticate: ${challengeHeader}`);
     reply.header('WWW-Authenticate', challengeHeader);
-  } else {
-    console.log(`[AUTH] Sending 401 without WWW-Authenticate`);
   }
 
   return reply.status(401).send({
