@@ -11,6 +11,7 @@ import fastifyRateLimit from '@fastify/rate-limit';
 import fastifyRawBody from 'fastify-raw-body';
 import fastifyStatic from '@fastify/static';
 import path from 'path';
+import { authMiddleware } from './security/authMiddleware';
 
 export const buildApp = (): FastifyInstance => {
   // Register default transports
@@ -61,6 +62,9 @@ export const buildApp = (): FastifyInstance => {
       environment: process.env.NODE_ENV || 'development'
     };
   });
+
+  // Security Layer (Authentication)
+  app.addHook('onRequest', authMiddleware);
 
   // Prefix all API routes with /api/v1
   app.register(eventRoutes, { prefix: '/api/v1/events' });
