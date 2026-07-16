@@ -2,6 +2,7 @@ import { db } from '../db';
 import { events, NewEventRecord } from '../db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { DomainEvent } from '../domain/event';
+import { EventBus, EventType } from './eventBus';
 
 export const persistEvent = async (domainEvent: DomainEvent, processingTimeMs?: number) => {
   const eventData: NewEventRecord = {
@@ -16,6 +17,9 @@ export const persistEvent = async (domainEvent: DomainEvent, processingTimeMs?: 
   };
 
   const result = await db.insert(events).values(eventData).returning();
+  
+  EventBus.publish(EventType.EVENT_RECEIVED, { event: result[0] });
+  
   return result[0];
 };
 

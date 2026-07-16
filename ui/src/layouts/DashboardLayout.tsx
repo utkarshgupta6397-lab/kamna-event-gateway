@@ -39,8 +39,7 @@ export default function DashboardLayout() {
   };
 
   const handleLogout = () => {
-    // A fetch request with intentionally invalid credentials
-    logout();
+    logout('manual');
   };
 
   const navItems = [

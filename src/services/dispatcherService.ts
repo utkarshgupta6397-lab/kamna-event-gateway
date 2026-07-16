@@ -5,6 +5,7 @@ import { TransportRegistry } from '../domain/transport';
 import { DeliveryRecord } from '../db/schema';
 import { DomainEvent } from '../domain/event';
 import { Destination, DestinationType, AuthenticationConfig } from '../domain/destination';
+import { EventBus, EventType } from './eventBus';
 
 export const dispatchDelivery = async (deliveryId: number): Promise<DeliveryRecord> => {
   // 1. Load Delivery
@@ -54,6 +55,8 @@ export const dispatchDelivery = async (deliveryId: number): Promise<DeliveryReco
     attempt: delivery.attempt + 1,
   });
 
+  EventBus.publish(EventType.DELIVERY_STARTED, { deliveryId, eventId: delivery.eventId, destinationId: delivery.destinationId });
+
   // 6. Execute Send
   const result = await transport.send(domainEvent, destination);
 
@@ -66,6 +69,12 @@ export const dispatchDelivery = async (deliveryId: number): Promise<DeliveryReco
     latencyMs: result.latencyMs,
     error: result.error,
   });
+
+  if (result.status === 'success') {
+    EventBus.publish(EventType.DELIVERY_SUCCESS, { delivery: updated });
+  } else {
+    EventBus.publish(EventType.DELIVERY_FAILED, { delivery: updated });
+  }
 
   return updated;
 };

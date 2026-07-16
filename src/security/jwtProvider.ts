@@ -5,12 +5,16 @@ import { env } from '../config/env';
 
 export class JwtAuthProvider implements AuthProvider {
   async authenticate(request: FastifyRequest): Promise<boolean> {
+    let token = '';
+
     const authHeader = request.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return false;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
+    } else if ((request.query as any)?.token) {
+      // Fallback for SSE / EventSource which cannot set headers
+      token = (request.query as any).token as string;
     }
 
-    const token = authHeader.split(' ')[1];
     if (!token) {
       return false;
     }

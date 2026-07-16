@@ -9,6 +9,8 @@ export const authRoutes: FastifyPluginAsync = async (app: FastifyInstance) => {
     const expectedUsername = env.GATEWAY_BASIC_USERNAME;
     const expectedPassword = env.GATEWAY_BASIC_PASSWORD;
 
+
+
     // Deny if credentials are not configured in environment
     if (!expectedUsername || !expectedPassword) {
       return reply.status(401).send({

@@ -85,13 +85,21 @@ export const buildApp = (): FastifyInstance => {
   }
 
   app.setNotFoundHandler((request, reply) => {
-    if (request.url.startsWith('/api')) {
-      reply.status(404).send({ error: 'API route not found' });
-    } else if (fs.existsSync(uiDistPath)) {
-      reply.sendFile('index.html');
-    } else {
-      reply.status(404).send({ error: 'Not found' });
+    const url = request.url;
+    
+    // Explicit 404 for missing APIs or Webhooks
+    if (url.startsWith('/api/') || url.startsWith('/webhooks/')) {
+      return reply.status(404).send({ error: 'Route not found' });
     }
+    
+    // SPA Fallback: Serve index.html for frontend routes
+    const acceptsHtml = request.headers.accept?.includes('text/html');
+    if (acceptsHtml && !url.startsWith('/assets/') && fs.existsSync(uiDistPath)) {
+      return reply.sendFile('index.html');
+    }
+
+    // Default 404 for anything else (e.g. missing images, assets, bad requests)
+    return reply.status(404).send({ error: 'Not found' });
   });
 
   return app;

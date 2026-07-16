@@ -2,28 +2,24 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { env } from '../config/env';
 import { getAuthProvider } from './index';
 
-// Exact URLs that are always public (no auth required)
-const PUBLIC_EXACT = new Set([
-  '/',
-  '/index.html',
-]);
-
-// URL prefixes that are always public
-const PUBLIC_PREFIXES = [
-  '/health',
-  '/webhooks',
-  '/.well-known',
-  '/favicon',
-  '/assets',
-  '/api/v1/events/test', // Making the test ingestion webhook public as per clarification
-  '/api/v1/auth/login'   // Login endpoint must be public
+// Public API endpoints that bypass authentication
+const PUBLIC_API_PREFIXES = [
+  '/api/v1/events/test',     // Webhook ingestion
+  '/api/v1/events/publish', // Generic event publishing
+  '/api/v1/auth/login'      // Login endpoint
 ];
 
 export const authMiddleware = async (request: FastifyRequest, reply: FastifyReply) => {
   const url = request.url;
 
-  // 1. Check if route is public (exact match or prefix match)
-  if (PUBLIC_EXACT.has(url) || PUBLIC_PREFIXES.some(prefix => url.startsWith(prefix))) {
+  // 1. Only enforce authentication on API routes
+  // This allows the SPA, static assets, and webhooks to bypass this middleware completely.
+  if (!url.startsWith('/api/')) {
+    return;
+  }
+
+  // 2. Allow explicitly public API endpoints
+  if (PUBLIC_API_PREFIXES.some(prefix => url.startsWith(prefix))) {
     return;
   }
 
