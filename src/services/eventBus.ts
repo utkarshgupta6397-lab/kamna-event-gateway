@@ -33,4 +33,9 @@ export enum EventType {
   DELIVERY_SUCCESS = 'DELIVERY_SUCCESS',
   DELIVERY_FAILED = 'DELIVERY_FAILED',
   SYSTEM_ERROR = 'SYSTEM_ERROR',
+  COMMUNICATION_OUTBOUND_REQUESTED = 'communication.outbound.requested',
+  COMMUNICATION_VALIDATED = 'communication.validated',
+  COMMUNICATION_PROCESSING = 'communication.processing',
+  COMMUNICATION_SENDING = 'communication.sending',
+  COMMUNICATION_PROVIDER_ACCEPTED = 'communication.provider.accepted',
 }

@@ -11,6 +11,8 @@ import Dashboard from './pages/Dashboard';
 import Events from './pages/Events';
 import Deliveries from './pages/Deliveries';
 import Destinations from './pages/Destinations';
+import Communications from './pages/Communications';
+import CommunicationDetails from './pages/CommunicationDetails';
 import Settings from './pages/Settings';
 import About from './pages/About';
 
@@ -50,6 +52,8 @@ export default function App() {
               <Route path="events" element={<Events />} />
               <Route path="deliveries" element={<Deliveries />} />
               <Route path="destinations" element={<Destinations />} />
+              <Route path="communications" element={<Communications />} />
+              <Route path="communications/:id" element={<CommunicationDetails />} />
               <Route path="settings" element={<Settings />} />
               <Route path="about" element={<About />} />
             </Route>

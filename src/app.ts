@@ -75,6 +75,10 @@ export const buildApp = (): FastifyInstance => {
   app.register(deliveryRoutes, { prefix: '/api/v1/deliveries' });
   app.register(dispatcherRoutes, { prefix: '/api/v1/dispatch' });
   app.register(debugRoutes, { prefix: '/api/v1/debug' });
+  
+  // Register the new message routes inline to avoid import issues at top right now
+  const { messageRoutes } = require('./routes/messages');
+  app.register(messageRoutes, { prefix: '/api/v1/messages' });
 
   // Serve Frontend conditionally
   const uiDistPath = path.join(__dirname, '../ui/dist');
