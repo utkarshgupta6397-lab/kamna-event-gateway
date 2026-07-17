@@ -87,3 +87,16 @@ export const communicationTimeline = sqliteTable('communication_timeline', {
 
 export type CommunicationTimelineRecord = typeof communicationTimeline.$inferSelect;
 export type NewCommunicationTimelineRecord = typeof communicationTimeline.$inferInsert;
+
+export const providerConfiguration = sqliteTable('provider_configuration', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  provider: text('provider').notNull().unique(),
+  enabled: integer('enabled', { mode: 'boolean' }).notNull().default(false),
+  isDefault: integer('is_default', { mode: 'boolean' }).notNull().default(false),
+  settingsJson: text('settings_json', { mode: 'json' }),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+});
+
+export type ProviderConfigurationRecord = typeof providerConfiguration.$inferSelect;
+export type NewProviderConfigurationRecord = typeof providerConfiguration.$inferInsert;

@@ -37,7 +37,7 @@ export class CommunicationProcessor {
       if (!message) throw new Error('Message not found');
 
       // 6. Invoke Transport
-      const transport = TransportFactory.getTransport(message.channel);
+      const transport = await TransportFactory.getTransport(message.channel);
       const response = await transport.send(message);
 
       if (response.success) {
@@ -87,9 +87,13 @@ export class CommunicationProcessor {
           .where(eq(outboundMessages.messageId, messageId));
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Error processing communication ${messageId}:`, error);
-      // In a real system, we'd update status to FAILED here.
+      try {
+        await this.updateStatus(messageId, 'FAILED', `System Error: ${error.message}`, eventId, source, EventType.SYSTEM_ERROR);
+      } catch (updateError) {
+        console.error(`Failed to update status to FAILED for ${messageId}`, updateError);
+      }
     }
   }
 

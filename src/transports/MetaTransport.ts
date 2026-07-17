@@ -1,10 +1,24 @@
 import { Transport, TransportResponse } from './Transport';
 
+export interface MetaTransportConfig {
+  accessToken?: string;
+  phoneNumberId?: string;
+  apiVersion?: string;
+  defaultLanguage?: string;
+}
+
 export class MetaTransport implements Transport {
+  private config: MetaTransportConfig | undefined;
+
+  constructor(config?: MetaTransportConfig) {
+    this.config = config;
+  }
+
   async send(message: any): Promise<TransportResponse> {
-    const accessToken = process.env.META_ACCESS_TOKEN;
-    const phoneNumberId = process.env.META_PHONE_NUMBER_ID;
-    const apiVersion = process.env.META_API_VERSION || 'v19.0';
+    const accessToken = this.config?.accessToken || process.env.META_ACCESS_TOKEN;
+    const phoneNumberId = this.config?.phoneNumberId || process.env.META_PHONE_NUMBER_ID;
+    const apiVersion = this.config?.apiVersion || process.env.META_API_VERSION || 'v19.0';
+    const defaultLanguage = this.config?.defaultLanguage || process.env.META_DEFAULT_LANGUAGE || 'en';
 
     if (!accessToken || !phoneNumberId) {
       throw new Error('META_ACCESS_TOKEN and META_PHONE_NUMBER_ID are required in the environment for MetaTransport.');
@@ -19,7 +33,7 @@ export class MetaTransport implements Transport {
         type: 'template',
         template: {
           name: message.template,
-          language: { code: process.env.META_DEFAULT_LANGUAGE || 'en' }, 
+          language: { code: defaultLanguage }, 
           components: [] // Empty components for MVP test template
         }
       };
