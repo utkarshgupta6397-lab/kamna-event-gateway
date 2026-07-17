@@ -35,6 +35,7 @@ export default function CommunicationDetails() {
       case 'META_ACCEPTED': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
       case 'DELIVERED': return 'bg-green-500/10 text-green-400 border-green-500/20';
       case 'READ': return 'bg-purple-500/10 text-purple-400 border-purple-500/20';
+      case 'REPLIED': return 'bg-pink-500/10 text-pink-400 border-pink-500/20';
       case 'FAILED': return 'bg-red-500/10 text-red-400 border-red-500/20';
       default: return 'bg-slate-500/10 text-slate-400 border-slate-500/20';
     }

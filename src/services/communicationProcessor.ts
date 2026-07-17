@@ -2,7 +2,7 @@
 import { db } from '../db';
 import { outboundMessages, communicationTimeline } from '../db/schema';
 import { EventBus, EventType } from './eventBus';
-import { eq } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { TransportFactory } from '../transports/TransportFactory';
 
@@ -141,5 +141,82 @@ export class CommunicationProcessor {
         status: status,
       },
     });
+  }
+
+  /**
+   * Updates communication status from an external webhook.
+   */
+  static async updateStatusFromWebhook(
+    providerMessageId: string,
+    newStatus: string,
+    providerPayload: unknown,
+    timestamp: Date,
+    errorDetails?: string
+  ) {
+    const [message] = await db.select().from(outboundMessages).where(eq(outboundMessages.providerMessageId, providerMessageId));
+    if (!message) return false;
+
+    const currentStatus = message.status;
+    const terminalStates = ['FAILED', 'READ', 'REPLIED'];
+    
+    // Prevent backward transitions or overriding terminal states (except READ -> REPLIED)
+    if (terminalStates.includes(currentStatus) && currentStatus !== 'READ' && newStatus !== 'REPLIED') {
+      return true; // Ignore but acknowledge match
+    }
+    if (currentStatus === 'READ' && newStatus !== 'REPLIED' && newStatus !== 'READ') {
+       return true;
+    }
+    
+    const descriptionMap: Record<string, string> = {
+      'SENT': 'Sent',
+      'DELIVERED': 'Delivered',
+      'READ': 'Read',
+      'REPLIED': 'Customer Replied',
+      'FAILED': errorDetails ? `Failed: ${errorDetails}` : 'Failed',
+    };
+    
+    const description = descriptionMap[newStatus] || newStatus;
+
+    // 1. Update main record
+    await db.update(outboundMessages)
+      .set({ status: newStatus, providerResponse: providerPayload || message.providerResponse })
+      .where(eq(outboundMessages.messageId, message.messageId));
+
+    // 2. Record in timeline
+    await this.recordTransition(message.messageId, newStatus, description);
+
+    // 3. Publish specific SSE broadcast
+    EventBus.publish(EventType.COMMUNICATION_STATUS_CHANGED, {
+      type: EventType.COMMUNICATION_STATUS_CHANGED,
+      event: {
+        eventId: uuidv4(),
+        type: EventType.COMMUNICATION_STATUS_CHANGED,
+        payload: {
+          messageId: message.messageId,
+          providerMessageId,
+          previousStatus: currentStatus,
+          newStatus,
+          timestamp,
+          provider: 'meta',
+          providerPayload
+        },
+        receivedAt: new Date(),
+        status: newStatus,
+      },
+    });
+    
+    return true;
+  }
+
+  static async handleInboundReply(waId: string) {
+    const [latestMessage] = await db.select()
+      .from(outboundMessages)
+      .where(eq(outboundMessages.recipient, waId))
+      .orderBy(desc(outboundMessages.createdAt))
+      .limit(1);
+      
+    if (latestMessage && latestMessage.providerMessageId) {
+       await this.updateStatusFromWebhook(latestMessage.providerMessageId, 'REPLIED', null, new Date());
+    }
   }
 }

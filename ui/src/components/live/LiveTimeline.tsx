@@ -30,6 +30,11 @@ export const LiveTimeline: React.FC<LiveTimelineProps> = ({ events, searchQuery,
       case 'DELIVERY_SUCCESS': return <CheckCircle2 size={16} />;
       case 'DELIVERY_FAILED': return <XCircle size={16} />;
       case 'communication.outbound.requested': return <MessageCircle size={16} />;
+      case 'communication.inbound.received': return <MessageCircle size={16} />;
+      case 'communication.status.changed': 
+        if (type === 'DELIVERED' || type === 'READ') return <CheckCircle2 size={16} />;
+        if (type === 'FAILED') return <XCircle size={16} />;
+        return <Zap size={16} />;
       default: return <Clock size={16} />;
     }
   };
@@ -102,6 +107,37 @@ export const LiveTimeline: React.FC<LiveTimelineProps> = ({ events, searchQuery,
                       </span>
                     )}
                   </>
+                )}
+                {evt.type === 'communication.status.changed' && (
+                  <div className="flex items-center gap-3">
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wide ${
+                      evt.event?.payload?.newStatus === 'DELIVERED' ? 'bg-green-500/20 text-green-400' :
+                      evt.event?.payload?.newStatus === 'READ' ? 'bg-purple-500/20 text-purple-400' :
+                      evt.event?.payload?.newStatus === 'FAILED' ? 'bg-red-500/20 text-red-400' :
+                      'bg-slate-500/20 text-slate-400'
+                    }`}>
+                      {evt.event?.payload?.newStatus === 'DELIVERED' ? '📦 DELIVERED' :
+                       evt.event?.payload?.newStatus === 'READ' ? '👀 READ' :
+                       evt.event?.payload?.newStatus === 'FAILED' ? '❌ FAILED' :
+                       evt.event?.payload?.newStatus}
+                    </span>
+                    <span className="flex items-center gap-1 text-slate-300 text-xs">
+                       Message ID: <span className="font-mono">{evt.event?.payload?.messageId}</span>
+                    </span>
+                  </div>
+                )}
+                {evt.type === 'communication.inbound.received' && (
+                  <div className="flex items-center gap-3">
+                    <span className="px-2 py-0.5 rounded bg-pink-500/20 text-pink-400 text-[10px] font-bold tracking-wide">
+                      💬 CUSTOMER REPLIED
+                    </span>
+                    <span className="flex items-center gap-1 text-slate-300 text-xs">
+                      From: <span className="font-semibold">{evt.event?.payload?.senderName} ({evt.event?.payload?.waId})</span>
+                    </span>
+                    <span className="flex items-center gap-1 text-slate-400 text-xs truncate max-w-xs italic">
+                      "{evt.event?.payload?.text}"
+                    </span>
+                  </div>
                 )}
               </div>
             </div>

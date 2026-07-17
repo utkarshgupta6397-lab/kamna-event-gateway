@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import type { LiveEvent } from '../../hooks/useEventStream';
-import { CheckCircle2, XCircle, Clock, Zap, ArrowRight, ServerCrash } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, Zap, ArrowRight, ServerCrash, MessageSquare } from 'lucide-react';
 
 interface ActivityFeedProps {
   events: LiveEvent[];
@@ -23,6 +23,8 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ events }) => {
       case 'DELIVERY_SUCCESS': return <CheckCircle2 size={14} className="text-green-500" />;
       case 'DELIVERY_FAILED': return <XCircle size={14} className="text-red-500" />;
       case 'SYSTEM_ERROR': return <ServerCrash size={14} className="text-red-600" />;
+      case 'communication.status.changed': return <CheckCircle2 size={14} className="text-purple-500" />;
+      case 'communication.inbound.received': return <MessageSquare size={14} className="text-pink-500" />;
       default: return <Clock size={14} className="text-slate-500" />;
     }
   };
@@ -34,6 +36,8 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ events }) => {
       case 'DELIVERY_SUCCESS': return `Delivery ${event.delivery?.id} succeeded`;
       case 'DELIVERY_FAILED': return `Delivery ${event.delivery?.id} failed`;
       case 'SYSTEM_ERROR': return 'System error occurred';
+      case 'communication.status.changed': return `Status changed to ${event.event?.payload?.newStatus}`;
+      case 'communication.inbound.received': return `Reply from ${event.event?.payload?.senderName}`;
       default: return `Unknown action: ${event.type}`;
     }
   };

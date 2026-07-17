@@ -100,3 +100,35 @@ export const providerConfiguration = sqliteTable('provider_configuration', {
 
 export type ProviderConfigurationRecord = typeof providerConfiguration.$inferSelect;
 export type NewProviderConfigurationRecord = typeof providerConfiguration.$inferInsert;
+
+export const webhookEvents = sqliteTable('webhook_events', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  provider: text('provider').notNull().default('meta'),
+  eventType: text('event_type'),
+  webhookObject: text('webhook_object'),
+  providerMessageId: text('provider_message_id'),
+  rawPayload: text('raw_payload', { mode: 'json' }).notNull(),
+  processed: integer('processed', { mode: 'boolean' }).notNull().default(false),
+  processedAt: integer('processed_at', { mode: 'timestamp' }),
+  receivedAt: integer('received_at', { mode: 'timestamp' }).notNull(),
+  processingError: text('processing_error'),
+  retryCount: integer('retry_count').notNull().default(0),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+});
+
+export type WebhookEventRecord = typeof webhookEvents.$inferSelect;
+export type NewWebhookEventRecord = typeof webhookEvents.$inferInsert;
+
+export const inboundMessages = sqliteTable('inbound_messages', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  sender: text('sender').notNull(),
+  waId: text('wa_id'),
+  timestamp: integer('timestamp', { mode: 'timestamp' }).notNull(),
+  messageType: text('message_type').notNull(),
+  text: text('text'),
+  rawPayload: text('raw_payload', { mode: 'json' }).notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+});
+
+export type InboundMessageRecord = typeof inboundMessages.$inferSelect;
+export type NewInboundMessageRecord = typeof inboundMessages.$inferInsert;

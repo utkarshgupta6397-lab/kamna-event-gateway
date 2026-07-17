@@ -39,4 +39,6 @@ export enum EventType {
   COMMUNICATION_PROCESSING = 'communication.processing',
   COMMUNICATION_SENDING = 'communication.sending',
   COMMUNICATION_PROVIDER_ACCEPTED = 'communication.provider.accepted',
+  COMMUNICATION_STATUS_CHANGED = 'communication.status.changed',
+  COMMUNICATION_INBOUND_RECEIVED = 'communication.inbound.received',
 }

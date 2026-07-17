@@ -1,5 +1,8 @@
 import { FastifyInstance } from 'fastify';
 import { ProviderConfigurationService } from '../services/ProviderConfigurationService';
+import { db } from '../db';
+import { webhookEvents } from '../db/schema';
+import { MetaWebhookProcessor } from '../services/metaWebhookProcessor';
 
 export const webhookRoutes = async (fastify: FastifyInstance) => {
   
@@ -29,6 +32,28 @@ export const webhookRoutes = async (fastify: FastifyInstance) => {
     }
     
     return reply.status(400).send('Bad Request');
+  });
+
+  // Meta Webhook Receiver
+  fastify.post('/meta', async (request, reply) => {
+    const payload = request.body as Record<string, unknown>;
+    
+    // Store webhook in DB immediately
+    const [inserted] = await db.insert(webhookEvents).values({
+      provider: 'meta',
+      rawPayload: payload,
+      receivedAt: new Date(),
+      createdAt: new Date(),
+    }).returning();
+    
+    // Return 200 immediately
+    reply.status(200).send('EVENT_RECEIVED');
+    
+    // Process asynchronously
+    MetaWebhookProcessor.processWebhook(inserted.id).catch(err => {
+      // eslint-disable-next-line no-console
+      console.error(`Failed to process Meta webhook ${inserted.id}`, err);
+    });
   });
 
 };
