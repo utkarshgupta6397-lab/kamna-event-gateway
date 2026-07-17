@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Transport, TransportResponse } from './Transport';
+import { MetaApiService } from '../services/metaApiService';
+import { MetaMapper } from '../mappers/metaMapper';
 
 export interface MetaTransportConfig {
   accessToken?: string;
@@ -28,15 +30,28 @@ export class MetaTransport implements Transport {
     try {
       const url = `https://graph.facebook.com/${apiVersion}/${phoneNumberId}/messages`;
       
+      const templates = await MetaApiService.getTemplates(true);
+      const targetLanguage = message.metadata?.language || defaultLanguage;
+      
+      // If the ERP explicitly asked for a language, match it. If not, match name and use its language.
+      const targetTemplate = templates.find(t => t.name === message.template && (message.metadata?.language ? t.language === targetLanguage : true));
+
+      if (!targetTemplate) {
+        throw new Error(`Template '${message.template}' not found during dispatch.`);
+      }
+
+      const templatePayload = MetaMapper.buildMetaTemplatePayload(
+        message.template,
+        targetTemplate.language,
+        (message.variables as string[]) || [],
+        targetTemplate
+      );
+
       const payload = {
         messaging_product: 'whatsapp',
         to: message.recipient,
         type: 'template',
-        template: {
-          name: message.template,
-          language: { code: defaultLanguage }, 
-          components: [] // Empty components for MVP test template
-        }
+        template: templatePayload
       };
 
       const startTime = performance.now();

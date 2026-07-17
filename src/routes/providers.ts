@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { FastifyInstance } from 'fastify';
 import { ProviderConfigurationService } from '../services/ProviderConfigurationService';
+import { MetaApiService } from '../services/metaApiService';
 
 export const providerRoutes = async (fastify: FastifyInstance) => {
   
@@ -109,6 +110,19 @@ export const providerRoutes = async (fastify: FastifyInstance) => {
       }
       
       return reply.send({ success: true, details: json });
+    } catch (error: unknown) {
+      return reply.status(500).send({ success: false, error: (error as Error).message });
+    }
+  });
+
+  // Get Approved Templates
+  fastify.get('/whatsapp/templates', async (_request, reply) => {
+    try {
+      const templates = await MetaApiService.getTemplates(true);
+      // Filter out only approved templates if needed, or return all
+      // The requirement says: "Fetch approved templates". Let's filter by status.
+      const approvedTemplates = templates.filter(t => t.status === 'APPROVED');
+      return reply.send(approvedTemplates);
     } catch (error: unknown) {
       return reply.status(500).send({ success: false, error: (error as Error).message });
     }

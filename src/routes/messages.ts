@@ -7,12 +7,15 @@ import { outboundMessages, communicationTimeline, NewOutboundMessageRecord } fro
 import { EventBus } from '../services/eventBus';
 import { CommunicationProcessor } from '../services/communicationProcessor';
 import { eq, desc } from 'drizzle-orm';
+import { MetaApiService } from '../services/metaApiService';
+import { MetaMapper } from '../mappers/metaMapper';
 
 const messageSchema = z.object({
   channel: z.string().min(1),
   recipient: z.string().min(1),
   template: z.string().min(1),
-  variables: z.record(z.unknown()).optional(),
+  language: z.string().optional(),
+  variables: z.array(z.string()).optional(),
   metadata: z.record(z.unknown()).optional(),
   requestedBy: z.string().min(1),
   source: z.string().min(1),
@@ -64,8 +67,44 @@ export const messageRoutes: FastifyPluginAsync = async (app: FastifyInstance) =>
   app.post('/send', async (request, reply) => {
     try {
       const body = messageSchema.parse(request.body);
+      
+      // Validation Logic
+      if (body.channel === 'whatsapp') {
+        const templates = await MetaApiService.getTemplates(true);
+        const targetTemplate = templates.find(t => t.name === body.template && (body.language ? t.language === body.language : true));
+
+        if (!targetTemplate) {
+          return reply.status(400).send({
+            success: false,
+            error: 'Invalid Template',
+            details: `Template '${body.template}' with language '${body.language || 'any'}' not found.`
+          });
+        }
+
+        if (targetTemplate.status !== 'APPROVED') {
+          return reply.status(400).send({
+            success: false,
+            error: 'Invalid Template',
+            details: `Template '${body.template}' is not APPROVED (status: ${targetTemplate.status}).`
+          });
+        }
+
+        const expectedCount = MetaMapper.calculateExpectedVariableCount(targetTemplate.components);
+        const providedCount = body.variables ? body.variables.length : 0;
+
+        if (expectedCount !== providedCount) {
+          return reply.status(400).send({
+            success: false,
+            error: 'Invalid Template',
+            details: `Template expects ${expectedCount} variables, but ${providedCount} were provided.`
+          });
+        }
+      }
+
       const messageId = uuidv4();
       const eventId = uuidv4();
+
+      const mergedMetadata = { ...(body.metadata || {}), language: body.language };
 
       const messageRecord: NewOutboundMessageRecord = {
         messageId,
@@ -74,7 +113,7 @@ export const messageRoutes: FastifyPluginAsync = async (app: FastifyInstance) =>
         recipient: body.recipient,
         template: body.template,
         variables: body.variables || null,
-        metadata: body.metadata || null,
+        metadata: mergedMetadata,
         requestedBy: body.requestedBy,
         source: body.source,
         status: 'QUEUED',
@@ -113,9 +152,10 @@ export const messageRoutes: FastifyPluginAsync = async (app: FastifyInstance) =>
 
       return reply.send({
         success: true,
-        messageId,
-        eventId,
-        status: 'QUEUED',
+        gatewayMessageId: messageId,
+        providerMessageId: null,
+        providerStatus: 'accepted',
+        queuedAt: messageRecord.createdAt
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
