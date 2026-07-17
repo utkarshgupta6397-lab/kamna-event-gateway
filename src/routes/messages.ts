@@ -89,22 +89,63 @@ export const messageRoutes: FastifyPluginAsync = async (app: FastifyInstance) =>
           });
         }
 
-        const expectedCount = MetaMapper.calculateExpectedVariableCount(targetTemplate.components);
+        const requirements = MetaMapper.getTemplateRequirements(targetTemplate.components);
         const providedCount = body.variables ? body.variables.length : 0;
 
-        if (expectedCount !== providedCount) {
+        if (requirements.expectedVariables !== providedCount) {
           return reply.status(400).send({
             success: false,
             error: 'Invalid Template',
-            details: `Template expects ${expectedCount} variables, but ${providedCount} were provided.`
+            details: `Template expects ${requirements.expectedVariables} variables, but ${providedCount} were provided.`
           });
+        }
+
+        if (requirements.requiresMedia) {
+          if (!body.metadata || !body.metadata.mediaBase64) {
+            return reply.status(400).send({
+              success: false,
+              error: 'Invalid Template',
+              details: `Template expects a ${requirements.mediaType} in the header, but 'mediaBase64' was not provided in metadata.`
+            });
+          }
         }
       }
 
       const messageId = uuidv4();
       const eventId = uuidv4();
 
-      const mergedMetadata = { ...(body.metadata || {}), language: body.language };
+      let mergedMetadata: any = { ...(body.metadata || {}), language: body.language };
+
+      // Offload media to file to prevent DB and SSE CPU spikes
+      if (mergedMetadata.mediaBase64) {
+        const fs = await import('fs/promises');
+        const path = await import('path');
+        const os = await import('os');
+        
+        let mimeType = 'application/octet-stream';
+        let base64Data = mergedMetadata.mediaBase64 as string;
+        
+        if (base64Data.startsWith('data:')) {
+           const matches = base64Data.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+).*?,(.*)$/);
+           if (matches) {
+             mimeType = matches[1];
+             base64Data = matches[2];
+           }
+        }
+        
+        let ext = '.bin';
+        if (mimeType.includes('pdf')) ext = '.pdf';
+        else if (mimeType.includes('jpeg') || mimeType.includes('jpg')) ext = '.jpg';
+        else if (mimeType.includes('png')) ext = '.png';
+        else if (mimeType.includes('mp4')) ext = '.mp4';
+        
+        const tempPath = path.join(os.tmpdir(), `kamna_media_${messageId}${ext}`);
+        await fs.writeFile(tempPath, Buffer.from(base64Data, 'base64'));
+        
+        mergedMetadata.mediaFilePath = tempPath;
+        mergedMetadata.mediaMimeType = mimeType;
+        delete mergedMetadata.mediaBase64;
+      }
 
       const messageRecord: NewOutboundMessageRecord = {
         messageId,
@@ -129,7 +170,7 @@ export const messageRoutes: FastifyPluginAsync = async (app: FastifyInstance) =>
         recipient: body.recipient,
         template: body.template,
         variables: body.variables,
-        metadata: body.metadata,
+        metadata: mergedMetadata,
         requestedBy: body.requestedBy,
         source: body.source,
         status: 'QUEUED',

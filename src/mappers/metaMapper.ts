@@ -2,34 +2,32 @@
 
 export class MetaMapper {
   /**
-   * Calculates how many variables are expected by a template.
+   * Calculates how many text variables are expected by a template, and whether it requires media.
    */
-  static calculateExpectedVariableCount(templateComponents: any[]): number {
-    let count = 0;
+  static getTemplateRequirements(templateComponents: any[]): { expectedVariables: number, requiresMedia: boolean, mediaType?: string } {
+    let expectedVariables = 0;
+    let requiresMedia = false;
+    let mediaType: string | undefined;
     
     for (const comp of templateComponents) {
+      if (comp.type === 'HEADER' && (comp.format === 'IMAGE' || comp.format === 'DOCUMENT' || comp.format === 'VIDEO')) {
+        requiresMedia = true;
+        mediaType = comp.format.toLowerCase();
+      }
+
       if (comp.text) {
-        // Find max number in {{n}} because they could be unordered or duplicated 
-        // Actually, Meta requires them to be sequential 1, 2, 3...
-        // Finding the highest number or just counting unique occurrences of {{n}}.
-        // Usually, the number of parameters is exactly the highest index.
         const matches = comp.text.match(/\{\{(\d+)\}\}/g);
         if (matches) {
-          // We can just use the length if we assume they are sequential without gaps/dupes
-          // But safer to find the max index if needed. For now, length is standard.
-          // Wait, Meta says {{1}}, {{2}} so max index is the count for that component.
           let maxIndex = 0;
           for (const match of matches) {
             const num = parseInt(match.replace(/\{|\}/g, ''), 10);
             if (num > maxIndex) maxIndex = num;
           }
-          count += maxIndex;
+          expectedVariables += maxIndex;
         }
       }
-      
-      // Some buttons can have variables, but we'll focus on text parameters for MVP
     }
-    return count;
+    return { expectedVariables, requiresMedia, ...(mediaType ? { mediaType } : {}) };
   }
 
   /**
@@ -40,7 +38,8 @@ export class MetaMapper {
     templateName: string, 
     language: string, 
     variables: string[], 
-    templateDefinition: any
+    templateDefinition: any,
+    mediaId?: string
   ): any {
     
     const metaComponents: any[] = [];
@@ -51,7 +50,18 @@ export class MetaMapper {
     for (const compType of componentOrder) {
       const defComp = templateDefinition.components.find((c: any) => c.type === compType);
       
-      if (defComp && defComp.text) {
+      if (compType === 'HEADER' && mediaId && (defComp?.format === 'DOCUMENT' || defComp?.format === 'IMAGE' || defComp?.format === 'VIDEO')) {
+        const mediaType = defComp.format.toLowerCase();
+        metaComponents.push({
+          type: 'header',
+          parameters: [
+            {
+              type: mediaType,
+              [mediaType]: { id: mediaId }
+            }
+          ]
+        });
+      } else if (defComp && defComp.text) {
         let paramCount = 0;
         const matches = defComp.text.match(/\{\{(\d+)\}\}/g);
         if (matches) {

@@ -125,22 +125,26 @@ export class CommunicationProcessor {
     await this.recordTransition(messageId, status, description);
 
     // 3. Publish event for SSE broadcast
-    const newEventId = uuidv4();
-    EventBus.publish(eventType, {
-      type: eventType,
-      event: {
-        eventId: newEventId,
-        source: source,
+    try {
+      const newEventId = uuidv4();
+      EventBus.publish(eventType, {
         type: eventType,
-        payload: {
-          messageId,
-          eventId, // The original request event ID
-          status,
+        event: {
+          eventId: newEventId,
+          source: source,
+          type: eventType,
+          payload: {
+            messageId,
+            eventId, // The original request event ID
+            status,
+          },
+          receivedAt: new Date(),
+          status: status,
         },
-        receivedAt: new Date(),
-        status: status,
-      },
-    });
+      });
+    } catch (sseError) {
+      console.warn(`Failed to publish SSE event for ${messageId}`, sseError);
+    }
   }
 
   /**

@@ -62,4 +62,38 @@ export class MetaApiService {
       throw error;
     }
   }
+
+  static async uploadMedia(filePath: string, mimeType: string): Promise<string> {
+    const config = await ProviderConfigurationService.getMetaConfiguration();
+    if (!config || !config.accessToken || !config.phoneNumberId) {
+      throw new Error('Meta provider is not configured properly (missing phone number ID).');
+    }
+
+    const url = `https://graph.facebook.com/${config.apiVersion}/${config.phoneNumberId}/media`;
+
+    const formData = new FormData();
+    formData.append('messaging_product', 'whatsapp');
+    
+    const fs = await import('fs/promises');
+    const path = await import('path');
+    const buffer = await fs.readFile(filePath);
+    const blob = new Blob([buffer], { type: mimeType });
+    formData.append('file', blob, path.basename(filePath));
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${config.accessToken}`
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      throw new Error(`Meta API Media Upload error: ${response.status} ${errorBody}`);
+    }
+
+    const json = await response.json();
+    return json.id;
+  }
 }

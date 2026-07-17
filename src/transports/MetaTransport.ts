@@ -40,11 +40,21 @@ export class MetaTransport implements Transport {
         throw new Error(`Template '${message.template}' not found during dispatch.`);
       }
 
+      let mediaId: string | undefined;
+      
+      if (message.metadata?.mediaFilePath) {
+        mediaId = await MetaApiService.uploadMedia(
+          message.metadata.mediaFilePath,
+          message.metadata.mediaMimeType || 'application/octet-stream'
+        );
+      }
+
       const templatePayload = MetaMapper.buildMetaTemplatePayload(
         message.template,
         targetTemplate.language,
         (message.variables as string[]) || [],
-        targetTemplate
+        targetTemplate,
+        mediaId
       );
 
       const payload = {
