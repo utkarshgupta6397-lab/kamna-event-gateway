@@ -15,13 +15,13 @@ export class MetaTransport implements Transport {
   }
 
   async send(message: any): Promise<TransportResponse> {
-    const accessToken = this.config?.accessToken || process.env.META_ACCESS_TOKEN;
-    const phoneNumberId = this.config?.phoneNumberId || process.env.META_PHONE_NUMBER_ID;
-    const apiVersion = this.config?.apiVersion || process.env.META_API_VERSION || 'v19.0';
-    const defaultLanguage = this.config?.defaultLanguage || process.env.META_DEFAULT_LANGUAGE || 'en';
+    const accessToken = this.config?.accessToken;
+    const phoneNumberId = this.config?.phoneNumberId;
+    const apiVersion = this.config?.apiVersion || 'v19.0';
+    const defaultLanguage = this.config?.defaultLanguage || 'en';
 
     if (!accessToken || !phoneNumberId) {
-      throw new Error('META_ACCESS_TOKEN and META_PHONE_NUMBER_ID are required in the environment for MetaTransport.');
+      throw new Error('META_ACCESS_TOKEN and META_PHONE_NUMBER_ID are required and must be provided via config.');
     }
 
     try {

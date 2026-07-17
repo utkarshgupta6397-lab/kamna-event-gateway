@@ -1,8 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { db } from '../db';
-import { providerConfiguration } from '../db/schema';
-import { eq } from 'drizzle-orm';
-import { encrypt, decrypt } from '../security/encryption';
+import { ProviderConfigurationService } from '../services/ProviderConfigurationService';
 
 export const providerRoutes = async (fastify: FastifyInstance) => {
   
@@ -10,25 +7,27 @@ export const providerRoutes = async (fastify: FastifyInstance) => {
   fastify.get('/:provider', async (request, reply) => {
     const { provider } = request.params as { provider: string };
     
-    const [config] = await db.select().from(providerConfiguration).where(eq(providerConfiguration.provider, provider));
-    
-    if (!config) {
-      return reply.send({ configured: false });
+    if (provider === 'whatsapp') {
+      const config = await ProviderConfigurationService.getMetaConfiguration();
+      if (!config) {
+        return reply.send({ configured: false });
+      }
+
+      const settings = config.rawSettings || {};
+      if (settings.encryptedAccessToken) {
+        settings.encryptedAccessToken = '********';
+      }
+      
+      // Don't leak raw encrypted token if not needed, we pass the masked settings back
+      return reply.send({
+        configured: true,
+        enabled: config.enabled,
+        isDefault: config.isDefault,
+        settings
+      });
     }
 
-    const settings = (config.settingsJson as any) || {};
-    
-    // Mask the token
-    if (settings.encryptedAccessToken) {
-      settings.encryptedAccessToken = '********'; // Masked in UI
-    }
-
-    return reply.send({
-      configured: true,
-      enabled: config.enabled,
-      isDefault: config.isDefault,
-      settings
-    });
+    return reply.status(404).send({ error: 'Provider not found' });
   });
 
   // Update Provider Configuration
@@ -36,41 +35,39 @@ export const providerRoutes = async (fastify: FastifyInstance) => {
     const { provider } = request.params as { provider: string };
     const body = request.body as any;
     
-    const [existing] = await db.select().from(providerConfiguration).where(eq(providerConfiguration.provider, provider));
-    
-    let settings = body.settings || {};
-    
-    // Handle Encryption
-    if (settings.accessToken && settings.accessToken !== '********') {
-      settings.encryptedAccessToken = encrypt(settings.accessToken);
-    } else if (settings.accessToken === '********' && existing && existing.settingsJson) {
-      settings.encryptedAccessToken = (existing.settingsJson as any).encryptedAccessToken;
+    if (provider === 'whatsapp') {
+      await ProviderConfigurationService.saveMetaConfiguration(body);
+      return reply.send({ success: true });
     }
     
-    // Don't save plaintext token
-    delete settings.accessToken;
+    return reply.status(404).send({ error: 'Provider not found' });
+  });
 
-    if (existing) {
-      await db.update(providerConfiguration)
-        .set({
-          enabled: body.enabled,
-          isDefault: body.isDefault,
-          settingsJson: settings,
-          updatedAt: new Date()
-        })
-        .where(eq(providerConfiguration.provider, provider));
-    } else {
-      await db.insert(providerConfiguration).values({
-        provider,
-        enabled: body.enabled,
-        isDefault: body.isDefault,
-        settingsJson: settings,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
+  // Generate Webhook Verify Token
+  fastify.post('/whatsapp/generate-verify-token', async (_request, reply) => {
+    const crypto = require('crypto');
+    const token = `kt_verify_${crypto.randomBytes(24).toString('base64url')}`;
+    
+    // Partially save just the token if the record doesn't exist, or update existing.
+    // ProviderConfigurationService.saveMetaConfiguration expects a full payload. We can fetch existing first.
+    let config: any = await ProviderConfigurationService.getMetaConfiguration();
+    if (!config) {
+      config = { enabled: false, isDefault: false, settings: {} };
     }
-
-    return reply.send({ success: true });
+    
+    await ProviderConfigurationService.saveMetaConfiguration({
+      enabled: config.enabled,
+      isDefault: config.isDefault,
+      settings: {
+        ...config,
+        accessToken: config.accessToken ? '********' : '', // preserve access token state
+        verifyToken: token,
+        webhookVerified: false, // Reset verification status
+        lastVerificationAt: null
+      }
+    });
+    
+    return reply.send({ success: true, verifyToken: token });
   });
 
   // Test Connection
@@ -81,21 +78,18 @@ export const providerRoutes = async (fastify: FastifyInstance) => {
       return reply.status(400).send({ success: false, error: 'Test connection only supported for WhatsApp currently' });
     }
 
-    const [config] = await db.select().from(providerConfiguration).where(eq(providerConfiguration.provider, provider));
+    const config = await ProviderConfigurationService.getMetaConfiguration();
     
-    if (!config || !config.settingsJson) {
+    if (!config) {
       return reply.status(400).send({ success: false, error: 'Provider not configured' });
     }
 
-    const settings = config.settingsJson as any;
-    const apiVersion = settings.apiVersion || 'v19.0';
-    const phoneNumberId = settings.phoneNumberId;
-    let accessToken = '';
+    const apiVersion = config.apiVersion || 'v19.0';
+    const phoneNumberId = config.phoneNumberId;
+    const accessToken = config.accessToken;
     
-    try {
-      accessToken = decrypt(settings.encryptedAccessToken);
-    } catch (e) {
-      return reply.status(400).send({ success: false, error: 'Failed to decrypt access token' });
+    if (!accessToken) {
+      return reply.status(400).send({ success: false, error: 'Access token not available' });
     }
 
     try {

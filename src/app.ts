@@ -83,6 +83,9 @@ export const buildApp = (): FastifyInstance => {
   const { providerRoutes } = require('./routes/providers');
   app.register(providerRoutes, { prefix: '/api/v1/providers' });
 
+  const { webhookRoutes } = require('./routes/webhooks');
+  app.register(webhookRoutes, { prefix: '/api/v1/webhooks' });
+
   // Serve Frontend conditionally
   const uiDistPath = path.join(__dirname, '../ui/dist');
   if (fs.existsSync(uiDistPath)) {

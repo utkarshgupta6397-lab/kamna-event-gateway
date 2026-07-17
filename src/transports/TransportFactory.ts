@@ -1,43 +1,32 @@
 import { Transport } from './Transport';
 import { MockTransport } from './MockTransport';
 import { MetaTransport } from './MetaTransport';
-import { db } from '../db';
-import { providerConfiguration } from '../db/schema';
-import { eq } from 'drizzle-orm';
-import { decrypt } from '../security/encryption';
+import { ProviderConfigurationService } from '../services/ProviderConfigurationService';
 
 export class TransportFactory {
   static async getTransport(channel: string): Promise<Transport> {
     
     // Attempt to load from database first
-    const [config] = await db.select().from(providerConfiguration).where(eq(providerConfiguration.provider, channel));
-    
-    if (config && config.enabled && config.settingsJson) {
-      const settings = config.settingsJson as any;
-      if (channel === 'whatsapp') {
-        let accessToken = '';
-        try {
-          accessToken = decrypt(settings.encryptedAccessToken);
-        } catch (e) {
-          console.error('Failed to decrypt access token for MetaTransport from DB');
-        }
-        
+    if (channel === 'whatsapp') {
+      const config = await ProviderConfigurationService.getMetaConfiguration();
+      if (config && config.enabled && config.accessToken) {
         return new MetaTransport({
-          accessToken,
-          phoneNumberId: settings.phoneNumberId,
-          apiVersion: settings.apiVersion,
-          defaultLanguage: settings.defaultLanguage
+          accessToken: config.accessToken,
+          phoneNumberId: config.phoneNumberId,
+          apiVersion: config.apiVersion,
+          defaultLanguage: config.defaultLanguage
         });
       }
     }
     
-    // Fallback to env / mock
+    // Fallback to mock for testing if explicitly enabled
     if (process.env.USE_MOCK_TRANSPORT === 'true') {
       return new MockTransport();
     }
     
+    // No more environment variable fallback for MetaTransport!
     if (channel === 'whatsapp') {
-      return new MetaTransport(); // will read from process.env internally
+       throw new Error('MetaTransport is not configured in the database. Please configure it in the UI.');
     }
     
     // Default fallback

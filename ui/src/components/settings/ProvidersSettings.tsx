@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiFetch } from '../../utils/api';
-import { Save, CheckCircle2, XCircle, Zap, Shield, Key, HelpCircle } from 'lucide-react';
+import { Save, CheckCircle2, XCircle, Zap, Shield, Key, HelpCircle, Eye, EyeOff, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ProvidersSettings() {
@@ -8,6 +8,8 @@ export default function ProvidersSettings() {
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [sending, setSending] = useState(false);
+  const [showToken, setShowToken] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
   const [config, setConfig] = useState({
     enabled: false,
@@ -20,6 +22,9 @@ export default function ProvidersSettings() {
       defaultLanguage: 'en_US',
       testPhoneNumber: '',
       accessToken: '',
+      verifyToken: '',
+      webhookVerified: false,
+      lastVerificationAt: null as string | null,
     }
   });
 
@@ -28,6 +33,22 @@ export default function ProvidersSettings() {
   useEffect(() => {
     fetchConfig();
   }, []);
+
+  const generateVerifyToken = async () => {
+    setGenerating(true);
+    try {
+      const res = await apiFetch('/api/v1/providers/whatsapp/generate-verify-token', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        updateSetting('verifyToken', data.verifyToken);
+        updateSetting('webhookVerified', false); // Needs re-verification
+      }
+    } catch (e) {
+      toast.error('Failed to generate token');
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const fetchConfig = async () => {
     setLoading(true);
@@ -47,14 +68,30 @@ export default function ProvidersSettings() {
               defaultLanguage: data.settings.defaultLanguage || 'en_US',
               testPhoneNumber: data.settings.testPhoneNumber || '',
               accessToken: data.settings.encryptedAccessToken ? '********' : '',
+              verifyToken: data.settings.verifyToken || '',
+              webhookVerified: data.settings.webhookVerified || false,
+              lastVerificationAt: data.settings.lastVerificationAt || null,
             }
           });
+          
+          if (!data.settings.verifyToken) {
+            generateVerifyToken();
+          }
+        } else {
+          // If not configured at all, auto-generate token
+          generateVerifyToken();
         }
       }
     } catch (e) {
       toast.error('Failed to load provider configuration');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRegenerateToken = () => {
+    if (window.confirm("Regenerating the token will break your existing Meta Webhook connection until you update it in the Meta App Dashboard. Are you sure?")) {
+      generateVerifyToken();
     }
   };
 
@@ -133,7 +170,7 @@ export default function ProvidersSettings() {
     }
   };
 
-  const updateSetting = (key: string, value: string) => {
+  const updateSetting = (key: string, value: any) => {
     setConfig(prev => ({
       ...prev,
       settings: { ...prev.settings, [key]: value }
@@ -225,6 +262,57 @@ export default function ProvidersSettings() {
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-1">WhatsApp Business Account ID</label>
                   <input type="text" value={config.settings.businessAccountId} onChange={e => updateSetting('businessAccountId', e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-indigo-500 font-mono" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Webhook Configuration */}
+          <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-800 flex items-center gap-2 bg-slate-900/50">
+              <Zap size={18} className="text-pink-400" />
+              <h3 className="font-semibold text-slate-200">Webhook Configuration</h3>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Verify Token</label>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <input 
+                        type={showToken ? "text" : "password"}
+                        readOnly 
+                        value={config.settings.verifyToken} 
+                        className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-4 pr-10 py-2 text-sm text-slate-300 font-mono focus:outline-none" 
+                        placeholder="Loading..." 
+                      />
+                      <button 
+                        type="button"
+                        onClick={() => setShowToken(!showToken)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                      >
+                        {showToken ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                    <button onClick={() => { navigator.clipboard.writeText(config.settings.verifyToken); toast.success('Copied Token'); }} className="px-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm transition-colors" title="Copy Token">Copy</button>
+                    <button onClick={handleRegenerateToken} disabled={generating} className="px-3 bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-50 rounded-lg text-sm transition-colors" title="Regenerate Token"><RefreshCw size={16} className={generating ? 'animate-spin' : ''} /></button>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Webhook URL</label>
+                  <div className="flex gap-2">
+                    <input type="text" readOnly value={`${window.location.origin}/api/v1/webhooks/meta`} className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-500 font-mono focus:outline-none" />
+                    <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/api/v1/webhooks/meta`); toast.success('Copied URL'); }} className="px-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm transition-colors">Copy</button>
+                  </div>
+                </div>
+              </div>
+              <div className="pt-2">
+                <div className={`p-4 rounded-lg text-sm flex items-start gap-3 ${config.settings.webhookVerified ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-800/50 text-slate-400 border border-slate-700'}`}>
+                  {config.settings.webhookVerified ? <CheckCircle2 size={16} className="mt-0.5 flex-shrink-0" /> : <HelpCircle size={16} className="mt-0.5 flex-shrink-0" />}
+                  <div>
+                    <p className="font-semibold">{config.settings.webhookVerified ? 'Webhook Verified' : 'Webhook Not Verified Yet'}</p>
+                    <p className="opacity-80 mt-1">{config.settings.webhookVerified ? `Last successful verification from Meta: ${new Date(config.settings.lastVerificationAt!).toLocaleString()}` : 'Configure the Webhook URL and Verify Token in your Meta App Dashboard.'}</p>
+                  </div>
                 </div>
               </div>
             </div>
