@@ -57,6 +57,32 @@ export default function CommunicationDetails() {
       { id: 'REPLIED', name: 'Customer Replied', status: 'pending' },
     ];
 
+    // Add FAILED to the logical progression if it's the current status
+    if (message.status === 'FAILED') {
+      const lastCompletedIdx = baseSteps.reduce((acc, step, idx) => {
+        return message.timeline?.find((t: any) => t.status === step.id) ? idx : acc;
+      }, -1);
+      
+      return baseSteps.map((step, idx) => {
+        const dbEntry = message.timeline?.find((t: any) => t.status === step.id);
+        
+        let status = 'pending';
+        if (dbEntry || idx <= lastCompletedIdx) {
+          status = 'completed';
+        }
+        
+        return {
+          name: dbEntry ? dbEntry.description : step.name,
+          status,
+          timestamp: dbEntry?.createdAt
+        };
+      }).concat({
+        name: message.timeline?.find((t: any) => t.status === 'FAILED')?.description || 'Failed',
+        status: 'failed',
+        timestamp: message.timeline?.find((t: any) => t.status === 'FAILED')?.createdAt
+      });
+    }
+
     const currentIdx = baseSteps.findIndex(s => s.id === message.status);
     
     return baseSteps.map((step, idx) => {
@@ -69,6 +95,11 @@ export default function CommunicationDetails() {
 
       // Mark as completed if the message has passed this state but we don't have an exact match in the simple DB check
       if (status === 'pending' && currentIdx > idx) {
+         status = 'completed';
+      }
+      
+      // If it exists in DB, it is definitely completed (even if currentIdx doesn't match perfectly)
+      if (dbEntry && status === 'pending') {
          status = 'completed';
       }
 
@@ -286,15 +317,18 @@ export default function CommunicationDetails() {
                 <div className={`absolute -left-[31px] w-4 h-4 rounded-full border-4 border-slate-900 ${
                   step.status === 'completed' ? 'bg-indigo-500' :
                   step.status === 'current' ? 'bg-orange-500 animate-pulse' :
+                  step.status === 'failed' ? 'bg-red-500' :
                   'bg-slate-700'
                 }`} />
                 <div className={`${
                   step.status === 'completed' ? 'text-slate-200' :
                   step.status === 'current' ? 'text-white font-semibold' :
+                  step.status === 'failed' ? 'text-red-400 font-semibold' :
                   'text-slate-500'
                 }`}>
                   <p className="text-sm">{step.name}</p>
                   {step.status === 'pending' && <p className="text-xs mt-1 italic">Awaiting response...</p>}
+                  {step.timestamp && <p className="text-xs mt-1 opacity-60 flex items-center gap-1"><Clock size={12}/> {new Date(step.timestamp).toLocaleTimeString()}</p>}
                 </div>
               </div>
             ))}

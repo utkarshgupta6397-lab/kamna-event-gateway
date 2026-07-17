@@ -16,14 +16,12 @@ export class MetaMapper {
       }
 
       if (comp.text) {
-        const matches = comp.text.match(/\{\{(\d+)\}\}/g);
+        const matches = comp.text.match(/\{\{([^}]+)\}\}/g);
         if (matches) {
-          let maxIndex = 0;
-          for (const match of matches) {
-            const num = parseInt(match.replace(/\{|\}/g, ''), 10);
-            if (num > maxIndex) maxIndex = num;
-          }
-          expectedVariables += maxIndex;
+          // A given string might have {{name}} and {{order_id}} (2 variables)
+          // Since named variables don't use maxIndex, we count unique instances.
+          const uniqueVars = new Set(matches);
+          expectedVariables += uniqueVars.size;
         }
       }
     }
@@ -63,12 +61,10 @@ export class MetaMapper {
         });
       } else if (defComp && defComp.text) {
         let paramCount = 0;
-        const matches = defComp.text.match(/\{\{(\d+)\}\}/g);
+        const matches = defComp.text.match(/\{\{([^}]+)\}\}/g);
         if (matches) {
-          for (const match of matches) {
-            const num = parseInt(match.replace(/\{|\}/g, ''), 10);
-            if (num > paramCount) paramCount = num;
-          }
+          const uniqueVars = new Set(matches);
+          paramCount = uniqueVars.size;
         }
         
         if (paramCount > 0) {

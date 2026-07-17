@@ -12,6 +12,7 @@ export class CommunicationProcessor {
    * Steps: QUEUED -> VALIDATED -> PROCESSING -> SENT
    */
   static async process(messageId: string, eventId: string, source: string) {
+    console.log(`\n[${new Date().toISOString()}] START PROCESSING communication: ${messageId}`);
     try {
       // 1. Initial Timeline Entry (Queued) is assumed to be handled by the router, 
       // but let's record it if needed, or just proceed to Validate.
@@ -21,16 +22,19 @@ export class CommunicationProcessor {
       await new Promise(resolve => setTimeout(resolve, 500));
 
       // 2. Validate
+      console.log(`[${new Date().toISOString()}] VALIDATING TEMPLATE for ${messageId}`);
       await this.updateStatus(messageId, 'VALIDATED', 'Validated', eventId, source, EventType.COMMUNICATION_VALIDATED);
 
       await new Promise(resolve => setTimeout(resolve, 500));
 
       // 3. Processing (Preparing payload for Meta, etc.)
+      console.log(`[${new Date().toISOString()}] VALIDATING VARIABLES for ${messageId}`);
       await this.updateStatus(messageId, 'PROCESSING', 'Processing', eventId, source, EventType.COMMUNICATION_PROCESSING);
 
       await new Promise(resolve => setTimeout(resolve, 500));
 
       // 4. Sending (Handing off to Transport)
+      console.log(`[${new Date().toISOString()}] BUILDING META PAYLOAD for ${messageId}`);
       await this.updateStatus(messageId, 'SENDING', 'Sending to Provider', eventId, source, EventType.COMMUNICATION_SENDING);
 
       // 5. Fetch message details to pass to transport
@@ -38,10 +42,12 @@ export class CommunicationProcessor {
       if (!message) throw new Error('Message not found');
 
       // 6. Invoke Transport
+      console.log(`[${new Date().toISOString()}] CALLING META API via Transport for ${messageId}`);
       const transport = await TransportFactory.getTransport(message.channel);
       const response = await transport.send(message);
 
       if (response.success) {
+        console.log(`[${new Date().toISOString()}] META RESPONSE RECEIVED (Success) for ${messageId}`);
         // Update DB with provider info
         await db.update(outboundMessages)
           .set({ 
@@ -58,6 +64,7 @@ export class CommunicationProcessor {
           .where(eq(outboundMessages.messageId, messageId));
 
         await this.recordTransition(messageId, 'META_ACCEPTED', 'Accepted by Meta');
+        console.log(`[${new Date().toISOString()}] COMMUNICATION COMPLETED for ${messageId}`);
         
         // Publish Event
         const newEventId = uuidv4();
@@ -78,6 +85,7 @@ export class CommunicationProcessor {
           },
         });
       } else {
+        console.error(`[${new Date().toISOString()}] META RESPONSE RECEIVED (Failed) for ${messageId}:`, response.error);
         await this.updateStatus(messageId, 'FAILED', `Failed: ${response.error}`, eventId, source, EventType.SYSTEM_ERROR);
         await db.update(outboundMessages)
           .set({ 
@@ -89,7 +97,13 @@ export class CommunicationProcessor {
       }
 
     } catch (error: unknown) {
-      console.error(`Error processing communication ${messageId}:`, error);
+      console.error(`\n[${new Date().toISOString()}] EXCEPTION THROWN during processing for ${messageId}`);
+      if (error instanceof Error) {
+        console.error(`Stage: Unknown (Check stack trace)`);
+        console.error(`Exception Message: ${error.message}`);
+        console.error(`Stack Trace:\n${error.stack}\n`);
+      }
+      
       try {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
         await this.updateStatus(messageId, 'FAILED', `System Error: ${errorMessage}`, eventId, source, EventType.SYSTEM_ERROR);
