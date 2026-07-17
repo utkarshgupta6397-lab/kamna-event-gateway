@@ -114,7 +114,7 @@ export const messageRoutes: FastifyPluginAsync = async (app: FastifyInstance) =>
       const messageId = uuidv4();
       const eventId = uuidv4();
 
-      let mergedMetadata: any = { ...(body.metadata || {}), language: body.language };
+      const mergedMetadata: any = { ...(body.metadata || {}), language: body.language };
 
       // Offload media to file to prevent DB and SSE CPU spikes
       if (mergedMetadata.mediaBase64) {
