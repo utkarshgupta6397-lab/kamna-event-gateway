@@ -9,6 +9,7 @@ import { authRoutes } from './routes/auth';
 import { messageRoutes } from './routes/messages';
 import { providerRoutes } from './routes/providers';
 import { webhookRoutes } from './routes/webhooks';
+import { diagnosticsRoutes } from './routes/diagnostics';
 import { TransportRegistry } from './domain/transport';
 import { HttpTransport } from './transports/httpTransport';
 import fastifyRateLimit from '@fastify/rate-limit';
@@ -17,8 +18,12 @@ import fastifyStatic from '@fastify/static';
 import path from 'path';
 import fs from 'fs';
 import { authMiddleware } from './security/authMiddleware';
+import { logBuffer } from './services/loggerBuffer';
 
 export const buildApp = (): FastifyInstance => {
+  // Start capturing logs for diagnostics
+  logBuffer.startIntercept();
+  
   // Register default transports
   TransportRegistry.register('webhook', new HttpTransport());
   TransportRegistry.register('http', new HttpTransport());
@@ -83,8 +88,8 @@ export const buildApp = (): FastifyInstance => {
   app.register(messageRoutes, { prefix: '/api/v1/messages' });
 
   app.register(providerRoutes, { prefix: '/api/v1/providers' });
-
   app.register(webhookRoutes, { prefix: '/api/v1/webhooks' });
+  app.register(diagnosticsRoutes, { prefix: '/api/v1/diagnostics' });
 
   // Serve Frontend conditionally
   const uiDistPath = path.join(__dirname, '../ui/dist');

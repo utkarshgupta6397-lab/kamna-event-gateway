@@ -10,6 +10,8 @@ interface SSEClient {
 
 class SSEService {
   private clients: Map<string, SSEClient> = new Map();
+  private lastBroadcastTime: Date | null = null;
+  private totalEventsSent = 0;
 
   constructor() {
     // Broadcast all events to all connected clients
@@ -41,10 +43,23 @@ class SSEService {
   }
 
   private broadcast(data: any) {
+    this.lastBroadcastTime = new Date();
+    this.totalEventsSent++;
     const payload = `data: ${JSON.stringify(data)}\n\n`;
     for (const client of this.clients.values()) {
       client.reply.raw.write(payload);
     }
+  }
+
+  public getDiagnostics() {
+    return {
+      connected: this.clients.size > 0,
+      connectedClients: this.clients.size,
+      lastBroadcastTime: this.lastBroadcastTime,
+      totalEventsSent: this.totalEventsSent,
+      heartbeat: 'Not Implemented',
+      currentQueueSize: 0,
+    };
   }
 
   private sendToClient(reply: FastifyReply, data: any) {

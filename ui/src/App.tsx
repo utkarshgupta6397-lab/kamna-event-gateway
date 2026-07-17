@@ -14,6 +14,7 @@ import Destinations from './pages/Destinations';
 import Communications from './pages/Communications';
 import CommunicationDetails from './pages/CommunicationDetails';
 import Settings from './pages/Settings';
+import Diagnostics from './pages/Diagnostics';
 import About from './pages/About';
 
 const queryClient = new QueryClient({
@@ -55,6 +56,7 @@ export default function App() {
               <Route path="communications" element={<Communications />} />
               <Route path="communications/:id" element={<CommunicationDetails />} />
               <Route path="settings" element={<Settings />} />
+              <Route path="settings/diagnostics" element={<Diagnostics />} />
               <Route path="about" element={<About />} />
             </Route>
 
