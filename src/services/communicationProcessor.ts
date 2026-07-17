@@ -91,7 +91,8 @@ export class CommunicationProcessor {
     } catch (error: unknown) {
       console.error(`Error processing communication ${messageId}:`, error);
       try {
-        await this.updateStatus(messageId, 'FAILED', `System Error: ${error.message}`, eventId, source, EventType.SYSTEM_ERROR);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+        await this.updateStatus(messageId, 'FAILED', `System Error: ${errorMessage}`, eventId, source, EventType.SYSTEM_ERROR);
       } catch (updateError) {
         console.error(`Failed to update status to FAILED for ${messageId}`, updateError);
       }

@@ -110,7 +110,7 @@ export const providerRoutes = async (fastify: FastifyInstance) => {
       
       return reply.send({ success: true, details: json });
     } catch (error: unknown) {
-      return reply.status(500).send({ success: false, error: error.message });
+      return reply.status(500).send({ success: false, error: (error as Error).message });
     }
   });
 

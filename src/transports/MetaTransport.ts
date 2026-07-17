@@ -77,7 +77,7 @@ export class MetaTransport implements Transport {
     } catch (error: unknown) {
       return {
         success: false,
-        error: error.message
+        error: error instanceof Error ? error.message : 'Unknown HTTP or network error',
       };
     }
   }

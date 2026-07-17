@@ -33,7 +33,7 @@ export const eventRoutes: FastifyPluginAsync = async (app: FastifyInstance) => {
     const { source, type, payload } = body;
 
     // Enrich and create domain event
-    const metadata = {
+    const metadata: Record<string, unknown> = {
       sourceIp: request.ip,
       headers: request.headers,
       path: request.url,
@@ -41,7 +41,7 @@ export const eventRoutes: FastifyPluginAsync = async (app: FastifyInstance) => {
       query: request.query as Record<string, unknown>
     };
 
-    const domainEvent = EventFactory.create(source, type, payload, metadata);
+    const domainEvent = EventFactory.create(source, type, (payload || {}) as Record<string, unknown>, metadata);
     
     // Store enriched event
     const start = process.hrtime();
