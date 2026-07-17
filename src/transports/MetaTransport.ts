@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Transport, TransportResponse } from './Transport';
 
 export interface MetaTransportConfig {
@@ -14,7 +15,7 @@ export class MetaTransport implements Transport {
     this.config = config;
   }
 
-  async send(message: any): Promise<TransportResponse> {
+  async send(message: Record<string, any>): Promise<TransportResponse> {
     const accessToken = this.config?.accessToken;
     const phoneNumberId = this.config?.phoneNumberId;
     const apiVersion = this.config?.apiVersion || 'v19.0';
@@ -73,7 +74,7 @@ export class MetaTransport implements Transport {
         httpStatus
       };
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         error: error.message

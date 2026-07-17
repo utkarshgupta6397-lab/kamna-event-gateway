@@ -6,6 +6,9 @@ import { deliveryRoutes } from './routes/deliveries';
 import { dispatcherRoutes } from './routes/dispatcher';
 import { debugRoutes } from './routes/debug';
 import { authRoutes } from './routes/auth';
+import { messageRoutes } from './routes/messages';
+import { providerRoutes } from './routes/providers';
+import { webhookRoutes } from './routes/webhooks';
 import { TransportRegistry } from './domain/transport';
 import { HttpTransport } from './transports/httpTransport';
 import fastifyRateLimit from '@fastify/rate-limit';
@@ -77,13 +80,10 @@ export const buildApp = (): FastifyInstance => {
   app.register(debugRoutes, { prefix: '/api/v1/debug' });
   
   // Register the new message routes inline to avoid import issues at top right now
-  const { messageRoutes } = require('./routes/messages');
   app.register(messageRoutes, { prefix: '/api/v1/messages' });
 
-  const { providerRoutes } = require('./routes/providers');
   app.register(providerRoutes, { prefix: '/api/v1/providers' });
 
-  const { webhookRoutes } = require('./routes/webhooks');
   app.register(webhookRoutes, { prefix: '/api/v1/webhooks' });
 
   // Serve Frontend conditionally

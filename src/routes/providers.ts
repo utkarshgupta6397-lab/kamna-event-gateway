@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { FastifyInstance } from 'fastify';
 import { ProviderConfigurationService } from '../services/ProviderConfigurationService';
 
@@ -33,7 +34,7 @@ export const providerRoutes = async (fastify: FastifyInstance) => {
   // Update Provider Configuration
   fastify.put('/:provider', async (request, reply) => {
     const { provider } = request.params as { provider: string };
-    const body = request.body as any;
+    const body = request.body as Record<string, unknown>;
     
     if (provider === 'whatsapp') {
       await ProviderConfigurationService.saveMetaConfiguration(body);
@@ -45,12 +46,11 @@ export const providerRoutes = async (fastify: FastifyInstance) => {
 
   // Generate Webhook Verify Token
   fastify.post('/whatsapp/generate-verify-token', async (_request, reply) => {
-    const crypto = require('crypto');
     const token = `kt_verify_${crypto.randomBytes(24).toString('base64url')}`;
     
     // Partially save just the token if the record doesn't exist, or update existing.
     // ProviderConfigurationService.saveMetaConfiguration expects a full payload. We can fetch existing first.
-    let config: any = await ProviderConfigurationService.getMetaConfiguration();
+    let config: Record<string, unknown> | null = await ProviderConfigurationService.getMetaConfiguration();
     if (!config) {
       config = { enabled: false, isDefault: false, settings: {} };
     }
@@ -109,7 +109,7 @@ export const providerRoutes = async (fastify: FastifyInstance) => {
       }
       
       return reply.send({ success: true, details: json });
-    } catch (error: any) {
+    } catch (error: unknown) {
       return reply.status(500).send({ success: false, error: error.message });
     }
   });

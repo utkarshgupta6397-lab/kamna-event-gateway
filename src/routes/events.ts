@@ -20,7 +20,7 @@ export const eventRoutes: FastifyPluginAsync = async (app: FastifyInstance) => {
 
   // Generic Event Publishing API
   app.post('/publish', async (request, reply) => {
-    const body = request.body as Record<string, any>;
+    const body = request.body as { source?: string, type?: string, payload?: unknown };
     
     // Validation
     if (!body || !body.source || !body.type || !body.payload) {

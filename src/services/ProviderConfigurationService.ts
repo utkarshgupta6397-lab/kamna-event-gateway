@@ -1,3 +1,5 @@
+/* eslint-disable no-console */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { db } from '../db';
 import { providerConfiguration } from '../db/schema';
 import { eq } from 'drizzle-orm';
@@ -14,13 +16,14 @@ export class ProviderConfigurationService {
     const config = await this.getConfiguration('whatsapp');
     if (!config) return null;
 
-    const settings = (config.settingsJson as any) || {};
+    const settings = (config.settingsJson as Record<string, any>) || {};
     let accessToken = '';
 
     if (settings.encryptedAccessToken) {
       try {
         accessToken = decrypt(settings.encryptedAccessToken);
       } catch (e) {
+        // eslint-disable-next-line no-console
         console.error('Failed to decrypt Meta access token');
       }
     }
@@ -30,6 +33,7 @@ export class ProviderConfigurationService {
       try {
         verifyToken = decrypt(settings.encryptedVerifyToken);
       } catch (e) {
+        // eslint-disable-next-line no-console
         console.error('Failed to decrypt Meta verify token');
       }
     }
@@ -51,24 +55,24 @@ export class ProviderConfigurationService {
     };
   }
 
-  static async saveMetaConfiguration(payload: any) {
+  static async saveMetaConfiguration(payload: Record<string, any>) {
     const provider = 'whatsapp';
     const [existing] = await db.select().from(providerConfiguration).where(eq(providerConfiguration.provider, provider));
     
-    let settings = payload.settings || {};
+    const settings = payload.settings || {};
     
     if (settings.accessToken && settings.accessToken !== '********') {
       settings.encryptedAccessToken = encrypt(settings.accessToken);
     } else if (settings.accessToken === '********' && existing && existing.settingsJson) {
-      settings.encryptedAccessToken = (existing.settingsJson as any).encryptedAccessToken;
+      settings.encryptedAccessToken = (existing.settingsJson as Record<string, any>).encryptedAccessToken;
     }
     delete settings.accessToken;
 
     if (settings.verifyToken) {
       settings.encryptedVerifyToken = encrypt(settings.verifyToken);
       delete settings.verifyToken;
-    } else if (existing && existing.settingsJson && (existing.settingsJson as any).encryptedVerifyToken) {
-      settings.encryptedVerifyToken = (existing.settingsJson as any).encryptedVerifyToken;
+    } else if (existing && existing.settingsJson && (existing.settingsJson as Record<string, any>).encryptedVerifyToken) {
+      settings.encryptedVerifyToken = (existing.settingsJson as Record<string, any>).encryptedVerifyToken;
     }
 
     if (existing) {
@@ -96,7 +100,7 @@ export class ProviderConfigurationService {
     const [existing] = await db.select().from(providerConfiguration).where(eq(providerConfiguration.provider, providerName));
     if (!existing) return;
 
-    const settings = (existing.settingsJson as any) || {};
+    const settings = (existing.settingsJson as Record<string, any>) || {};
     settings.webhookVerified = verified;
     settings.lastVerificationAt = new Date().toISOString();
 

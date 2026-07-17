@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';

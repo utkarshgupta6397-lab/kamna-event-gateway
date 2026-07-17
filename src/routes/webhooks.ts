@@ -5,7 +5,7 @@ export const webhookRoutes = async (fastify: FastifyInstance) => {
   
   // Meta Webhook Verification
   fastify.get('/meta', async (request, reply) => {
-    const query = request.query as any;
+    const query = request.query as Record<string, string>;
     
     const mode = query['hub.mode'];
     const token = query['hub.verify_token'];
@@ -15,9 +15,11 @@ export const webhookRoutes = async (fastify: FastifyInstance) => {
       const config = await ProviderConfigurationService.getMetaConfiguration();
       
       if (config && config.verifyToken === token) {
+        // eslint-disable-next-line no-console
         console.log('WEBHOOK_VERIFIED');
         
         // Update DB asynchronously so we don't block the response
+        // eslint-disable-next-line no-console
         ProviderConfigurationService.updateVerificationStatus('whatsapp', true).catch(e => console.error('Failed to update verification status', e));
         
         return reply.status(200).send(challenge);

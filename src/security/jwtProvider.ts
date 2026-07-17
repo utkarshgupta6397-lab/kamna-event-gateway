@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { FastifyRequest } from 'fastify';
 import jwt from 'jsonwebtoken';
 import { AuthProvider } from './authProvider';

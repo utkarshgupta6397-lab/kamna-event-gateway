@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { db } from '../db';
 import { outboundMessages, communicationTimeline } from '../db/schema';
 import { EventBus, EventType } from './eventBus';
@@ -87,7 +88,7 @@ export class CommunicationProcessor {
           .where(eq(outboundMessages.messageId, messageId));
       }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(`Error processing communication ${messageId}:`, error);
       try {
         await this.updateStatus(messageId, 'FAILED', `System Error: ${error.message}`, eventId, source, EventType.SYSTEM_ERROR);

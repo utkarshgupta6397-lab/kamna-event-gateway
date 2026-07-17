@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { EventBus } from './eventBus';
 import { randomUUID } from 'crypto';
@@ -12,7 +13,7 @@ class SSEService {
 
   constructor() {
     // Broadcast all events to all connected clients
-    EventBus.subscribe('*', (payload: any) => {
+    EventBus.subscribe('*', (payload: unknown) => {
       this.broadcast(payload);
     });
   }

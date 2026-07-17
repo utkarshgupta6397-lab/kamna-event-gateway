@@ -2,7 +2,7 @@ import { Transport, TransportResponse } from './Transport';
 import { v4 as uuidv4 } from 'uuid';
 
 export class MockTransport implements Transport {
-  async send(message: any): Promise<TransportResponse> {
+  async send(message: Record<string, unknown>): Promise<TransportResponse> {
     // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 1500));
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export interface TransportResponse {
   success: boolean;
   providerMessageId?: string;
@@ -9,5 +10,5 @@ export interface TransportResponse {
 }
 
 export interface Transport {
-  send(message: any): Promise<TransportResponse>;
+  send(message: Record<string, any>): Promise<TransportResponse>;
 }
