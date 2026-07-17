@@ -132,3 +132,20 @@ export const inboundMessages = sqliteTable('inbound_messages', {
 
 export type InboundMessageRecord = typeof inboundMessages.$inferSelect;
 export type NewInboundMessageRecord = typeof inboundMessages.$inferInsert;
+
+export const apiKeys = sqliteTable('api_keys', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
+  keyHash: text('key_hash').notNull().unique(),
+  keyPrefix: text('key_prefix').notNull(),
+  createdBy: text('created_by'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+  lastUsedAt: integer('last_used_at', { mode: 'timestamp' }),
+  lastUsedIp: text('last_used_ip'),
+  enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),
+  notes: text('notes'),
+});
+
+export type ApiKeyRecord = typeof apiKeys.$inferSelect;
+export type NewApiKeyRecord = typeof apiKeys.$inferInsert;
