@@ -23,18 +23,20 @@ export const LiveTimeline: React.FC<LiveTimelineProps> = ({ events, searchQuery,
 
 
 
-  const getIcon = (type: string) => {
-    switch (type) {
+  const getIcon = (evt: LiveEvent) => {
+    switch (evt.type) {
       case 'EVENT_RECEIVED': return <Zap size={16} />;
       case 'DELIVERY_STARTED': return <ArrowRight size={16} />;
       case 'DELIVERY_SUCCESS': return <CheckCircle2 size={16} />;
       case 'DELIVERY_FAILED': return <XCircle size={16} />;
       case 'communication.outbound.requested': return <MessageCircle size={16} />;
       case 'communication.inbound.received': return <MessageCircle size={16} />;
-      case 'communication.status.changed': 
-        if (type === 'DELIVERED' || type === 'READ') return <CheckCircle2 size={16} />;
-        if (type === 'FAILED') return <XCircle size={16} />;
+      case 'communication.status.changed': {
+        const newStatus = evt.event?.payload?.newStatus;
+        if (newStatus === 'DELIVERED' || newStatus === 'READ') return <CheckCircle2 size={16} />;
+        if (newStatus === 'FAILED') return <XCircle size={16} />;
         return <Zap size={16} />;
+      }
       default: return <Clock size={16} />;
     }
   };
@@ -63,7 +65,7 @@ export const LiveTimeline: React.FC<LiveTimelineProps> = ({ events, searchQuery,
             `}
           >
             <div className="flex-none p-3 rounded-xl bg-slate-950/50 border border-slate-800/50 shadow-inner">
-              {getIcon(evt.type)}
+              {getIcon(evt)}
             </div>
             
             <div className="flex-1 min-w-0">
