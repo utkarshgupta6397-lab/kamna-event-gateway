@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '../utils/api';
-import { Search, Filter, MessageSquare, ChevronRight, Send } from 'lucide-react';
+import { Search, Filter, MessageSquare, ChevronRight, Send, Image as ImageIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface CommunicationRecord {
@@ -33,18 +33,54 @@ export default function Communications() {
           channel: 'whatsapp',
           recipient: '918744832318',
           template: 'hello_world', // standard Meta sandbox template
-          variables: {},
+          variables: [],
           source: 'gateway-dashboard',
           requestedBy: 'developer'
         })
       });
       if (response.ok) {
-        // Will refresh automatically via useQuery interval, or we could force a refetch
+        // Will refresh automatically via useQuery interval
       }
     } catch (e) {
       console.error('Failed to send test message', e);
     } finally {
       setIsSending(false);
+    }
+  };
+
+  const [isSendingMedia, setIsSendingMedia] = useState(false);
+  const [successMediaId, setSuccessMediaId] = useState<string | null>(null);
+
+  const handleSendTestMediaTemplate = async () => {
+    setIsSendingMedia(true);
+    setSuccessMediaId(null);
+    try {
+      const base64Data = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+      
+      const response = await apiFetch('/api/v1/messages/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          channel: 'whatsapp',
+          recipient: '918744832318',
+          template: 'dcr_issued_v1',
+          language: 'en',
+          variables: ['KT/26-27/1233'],
+          metadata: {
+            mediaBase64: base64Data
+          },
+          source: 'gateway-dashboard',
+          requestedBy: 'developer'
+        })
+      });
+      if (response.ok) {
+        const result = await response.json();
+        setSuccessMediaId(result.gatewayMessageId);
+      }
+    } catch (e) {
+      console.error('Failed to send test media message', e);
+    } finally {
+      setIsSendingMedia(false);
     }
   };
 
@@ -97,15 +133,41 @@ export default function Communications() {
             Single source of truth for every outbound communication.
           </p>
         </div>
-        <button
-          onClick={handleSendTestMessage}
-          disabled={isSending}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg font-medium transition-colors text-sm"
-        >
-          {isSending ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Send size={16} />}
-          Send Test Template
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleSendTestMessage}
+            disabled={isSending || isSendingMedia}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-white rounded-lg font-medium transition-colors text-sm"
+          >
+            {isSending ? <span className="w-4 h-4 border-2 border-slate-300 border-t-transparent rounded-full animate-spin" /> : <Send size={16} />}
+            Send Test Template
+          </button>
+          
+          <button
+            onClick={handleSendTestMediaTemplate}
+            disabled={isSending || isSendingMedia}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg font-medium transition-colors text-sm"
+          >
+            {isSendingMedia ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <ImageIcon size={16} />}
+            Send Test Media Template
+          </button>
+        </div>
       </header>
+      
+      {successMediaId && (
+        <div className="px-6 py-3 bg-indigo-500/10 border-b border-indigo-500/20 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-indigo-400 text-sm font-medium">
+            <span className="flex items-center justify-center w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-400">✓</span>
+            Test Media Template queued successfully (Communication ID: {successMediaId})
+          </div>
+          <button
+            onClick={() => navigate(`/dashboard/communications/${successMediaId}`)}
+            className="px-3 py-1.5 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 rounded text-xs font-medium transition-colors"
+          >
+            Open Communication
+          </button>
+        </div>
+      )}
 
       <div className="p-6 flex-1 flex flex-col gap-4 overflow-hidden">
         {/* Controls */}
