@@ -11,22 +11,30 @@ export class MetaApiService {
       throw new Error('Meta provider is not configured properly.');
     }
 
-    const url = `https://graph.facebook.com/${config.apiVersion}/${config.businessAccountId}/message_templates?limit=1000`;
-    
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${config.accessToken}`
+    let url = `https://graph.facebook.com/${config.apiVersion}/${config.businessAccountId}/message_templates?limit=1000`;
+    let allTemplates: any[] = [];
+
+    while (url) {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${config.accessToken}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.text();
+        throw new Error(`Meta API error: ${response.status} ${errorBody}`);
       }
-    });
 
-    if (!response.ok) {
-      const errorBody = await response.text();
-      throw new Error(`Meta API error: ${response.status} ${errorBody}`);
+      const json = await response.json();
+      allTemplates = allTemplates.concat(json.data || []);
+      
+      // Check for next page
+      url = json.paging?.next || null;
     }
-
-    const json = await response.json();
-    const templates = json.data || [];
+    
+    const templates = allTemplates;
     
     // Clear old templates and insert new
     await db.delete(whatsappTemplates);

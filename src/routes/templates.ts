@@ -69,23 +69,19 @@ export const templateRoutes: FastifyPluginAsync = async (app: FastifyInstance) =
         payload.variables = ['TEST1', 'TEST2', 'TEST3']; 
       }
 
-      const selfHost = request.headers.host || 'localhost:3004';
-      const protocol = request.protocol || 'http';
-      const sendUrl = `${protocol}://${selfHost}/api/v1/messages/send`;
-
-      const response = await fetch(sendUrl, {
+      const response = await app.inject({
         method: 'POST',
+        url: '/api/v1/messages/send',
+        payload: payload,
         headers: {
-          'Content-Type': 'application/json',
-          ...(request.headers.authorization ? { 'Authorization': request.headers.authorization } : {})
-        },
-        body: JSON.stringify(payload)
+          ...request.headers
+        }
       });
 
-      const responseJson = await response.json();
+      const responseJson = response.json();
 
-      if (!response.ok) {
-         return reply.status(response.status).send(responseJson);
+      if (response.statusCode >= 400) {
+         return reply.status(response.statusCode).send(responseJson);
       }
 
       return reply.send({ success: true, ...responseJson });
