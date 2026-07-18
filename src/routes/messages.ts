@@ -92,13 +92,13 @@ export const messageRoutes: FastifyPluginAsync = async (app: FastifyInstance) =>
         const requirements = MetaMapper.getTemplateRequirements(targetTemplate.components);
         const providedCount = body.variables ? body.variables.length : 0;
         
-        console.log(`[${new Date().toISOString()}] VALIDATING VARIABLES for ${body.template}: Expected ${requirements.expectedVariables}, Provided ${providedCount}`);
+        app.log.info(`[${new Date().toISOString()}] VALIDATING VARIABLES for ${body.template}: Expected ${requirements.expectedVariables}, Provided ${providedCount}`);
         if (body.variables) {
-          console.log(`[${new Date().toISOString()}] PROVIDED VARIABLES:`, JSON.stringify(body.variables));
+          app.log.info(`[${new Date().toISOString()}] PROVIDED VARIABLES: ${JSON.stringify(body.variables)}`);
         }
 
         if (requirements.expectedVariables !== providedCount) {
-          console.error(`[${new Date().toISOString()}] VALIDATION FAILED: Template expects ${requirements.expectedVariables} variables, but ${providedCount} were provided.`);
+          app.log.error(`[${new Date().toISOString()}] VALIDATION FAILED: Template expects ${requirements.expectedVariables} variables, but ${providedCount} were provided.`);
           return reply.status(400).send({
             success: false,
             error: 'Invalid Template',
@@ -107,9 +107,9 @@ export const messageRoutes: FastifyPluginAsync = async (app: FastifyInstance) =>
         }
 
         if (requirements.requiresMedia) {
-          console.log(`[${new Date().toISOString()}] VALIDATING MEDIA: Template expects ${requirements.mediaType}`);
+          app.log.info(`[${new Date().toISOString()}] VALIDATING MEDIA: Template expects ${requirements.mediaType}`);
           if (!body.metadata || !body.metadata.mediaBase64) {
-            console.error(`[${new Date().toISOString()}] VALIDATION FAILED: Template expects a ${requirements.mediaType}, but 'mediaBase64' was not provided.`);
+            app.log.error(`[${new Date().toISOString()}] VALIDATION FAILED: Template expects a ${requirements.mediaType}, but 'mediaBase64' was not provided.`);
             return reply.status(400).send({
               success: false,
               error: 'Invalid Template',

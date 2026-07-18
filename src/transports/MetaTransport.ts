@@ -43,23 +43,10 @@ export class MetaTransport implements Transport {
       let mediaId: string | undefined;
       
       if (message.metadata?.mediaFilePath) {
-        console.log(`[${new Date().toISOString()}] LOADING MEDIA FILE: ${message.metadata.mediaFilePath}`);
-        console.log(`[${new Date().toISOString()}] MEDIA FILE FOUND - UPLOADING MEDIA`);
-        try {
-          mediaId = await MetaApiService.uploadMedia(
-            message.metadata.mediaFilePath,
-            message.metadata.mediaMimeType || 'application/octet-stream'
-          );
-          console.log(`[${new Date().toISOString()}] MEDIA ID RECEIVED: ${mediaId}`);
-        } catch (mediaError: unknown) {
-           console.error(`[${new Date().toISOString()}] EXCEPTION THROWN during media upload for ${message.messageId}`);
-           if (mediaError instanceof Error) {
-             console.error(`Stage: MEDIA UPLOAD`);
-             console.error(`Exception Message: ${mediaError.message}`);
-             console.error(`Stack Trace:\n${mediaError.stack}\n`);
-           }
-           throw mediaError;
-        }
+        mediaId = await MetaApiService.uploadMedia(
+          message.metadata.mediaFilePath,
+          message.metadata.mediaMimeType || 'application/octet-stream'
+        );
       }
 
       const templatePayload = MetaMapper.buildMetaTemplatePayload(

@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 
 import { buildApp } from './app';
 import { Buffer } from 'buffer';
