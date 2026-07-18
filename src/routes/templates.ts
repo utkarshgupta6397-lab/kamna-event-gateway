@@ -59,8 +59,8 @@ export const templateRoutes: FastifyPluginAsync = async (app: FastifyInstance) =
       };
 
       if (requirements.requiresMedia) {
-        // Generate a 1x1 valid PNG in memory
-        const base64Data = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+        // Generate a 10x10 valid PNG in memory to avoid strict dimensions rejection
+        const base64Data = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAFUlEQVR42mP8z8BQz0AEYBxVSF+FAAhKDveksOjmAAAAAElFTkSuQmCC';
         payload.metadata = {
           mediaBase64: base64Data
         };

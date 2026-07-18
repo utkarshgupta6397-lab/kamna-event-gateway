@@ -86,6 +86,38 @@ export class MetaMapper {
             });
           }
         }
+      } else if (compType === 'BUTTONS' && defComp && Array.isArray(defComp.buttons)) {
+        let btnIndex = 0;
+        for (const btn of defComp.buttons) {
+          if (btn.type === 'URL' && btn.url) {
+            let paramCount = 0;
+            const matches = btn.url.match(/\{\{([^}]+)\}\}/g);
+            if (matches) {
+              paramCount = new Set(matches).size;
+            }
+            if (paramCount > 0) {
+              const params = [];
+              for (let i = 0; i < paramCount; i++) {
+                if (varIndex < variables.length) {
+                  params.push({
+                    type: 'text',
+                    text: variables[varIndex]
+                  });
+                  varIndex++;
+                }
+              }
+              if (params.length > 0) {
+                metaComponents.push({
+                  type: 'button',
+                  sub_type: 'url',
+                  index: btnIndex,
+                  parameters: params
+                });
+              }
+            }
+          }
+          btnIndex++;
+        }
       }
     }
 
