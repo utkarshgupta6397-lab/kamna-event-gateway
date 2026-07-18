@@ -9,7 +9,7 @@ const envSchema = z.object({
   HOST: z.string().default('0.0.0.0'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   DATABASE_URL: z.string()
-    .default('~/.kamna-event-gateway/events.db')
+    .default('./data/events.db')
     .transform(url => url.startsWith('~/') ? url.replace('~', os.homedir()) : url),
   META_APP_SECRET: z.string().optional(),
   

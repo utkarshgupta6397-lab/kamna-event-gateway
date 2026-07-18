@@ -11,7 +11,7 @@
     "format": "prettier --write 'src/**/*.ts'",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate:sqlite",
-    "db:push": "drizzle-kit push:sqlite"
+    "db:push": "drizzle-kit push"
   },
   "dependencies": {
     "@fastify/rate-limit": "^9.1.0",

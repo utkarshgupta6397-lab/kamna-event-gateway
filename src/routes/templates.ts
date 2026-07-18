@@ -74,7 +74,7 @@ export const templateRoutes: FastifyPluginAsync = async (app: FastifyInstance) =
         url: '/api/v1/messages/send',
         payload: payload,
         headers: {
-          ...request.headers
+          ...(request.headers.authorization ? { 'authorization': request.headers.authorization } : {})
         }
       });
 
