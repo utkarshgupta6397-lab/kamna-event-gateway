@@ -13,6 +13,7 @@ import Deliveries from './pages/Deliveries';
 import Destinations from './pages/Destinations';
 import Communications from './pages/Communications';
 import CommunicationDetails from './pages/CommunicationDetails';
+import Templates from './pages/Templates';
 import Settings from './pages/Settings';
 import ApiKeys from './pages/ApiKeys';
 import Diagnostics from './pages/Diagnostics';
@@ -56,6 +57,7 @@ export default function App() {
               <Route path="destinations" element={<Destinations />} />
               <Route path="communications" element={<Communications />} />
               <Route path="communications/:id" element={<CommunicationDetails />} />
+              <Route path="templates" element={<Templates />} />
               <Route path="settings" element={<Settings />} />
               <Route path="settings/api-keys" element={<ApiKeys />} />
               <Route path="settings/diagnostics" element={<Diagnostics />} />

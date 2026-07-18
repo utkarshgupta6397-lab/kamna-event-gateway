@@ -118,7 +118,7 @@ export const providerRoutes = async (fastify: FastifyInstance) => {
   // Get Approved Templates
   fastify.get('/whatsapp/templates', async (_request, reply) => {
     try {
-      const templates = await MetaApiService.getTemplates(true);
+      const templates = await MetaApiService.getTemplates();
       // Filter out only approved templates if needed, or return all
       // The requirement says: "Fetch approved templates". Let's filter by status.
       const approvedTemplates = templates.filter(t => t.status === 'APPROVED');

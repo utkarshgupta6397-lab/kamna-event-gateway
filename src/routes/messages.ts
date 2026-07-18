@@ -70,7 +70,7 @@ export const messageRoutes: FastifyPluginAsync = async (app: FastifyInstance) =>
       
       // Validation Logic
       if (body.channel === 'whatsapp') {
-        const templates = await MetaApiService.getTemplates(true);
+        const templates = await MetaApiService.getTemplates();
         const targetTemplate = templates.find(t => t.name === body.template && (body.language ? t.language === body.language : true));
 
         if (!targetTemplate) {

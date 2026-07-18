@@ -1,84 +1,83 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ProviderConfigurationService } from './ProviderConfigurationService';
-
-interface TemplateCache {
-  data: any[];
-  timestamp: number;
-}
+import { db } from '../db';
+import { whatsappTemplates } from '../db/schema';
 
 export class MetaApiService {
-  private static templateCache: TemplateCache | null = null;
-  private static CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
-  static async getTemplates(useCache = true): Promise<any[]> {
-    if (useCache && this.templateCache) {
-      if (Date.now() - this.templateCache.timestamp < this.CACHE_TTL) {
-        return this.templateCache.data;
-      }
-    }
-
+  
+  static async syncTemplates(): Promise<any[]> {
     const config = await ProviderConfigurationService.getMetaConfiguration();
     if (!config || !config.accessToken || !config.businessAccountId) {
-      // If no config, return cached or throw
-      if (useCache && this.templateCache) return this.templateCache.data;
       throw new Error('Meta provider is not configured properly.');
     }
 
     const url = `https://graph.facebook.com/${config.apiVersion}/${config.businessAccountId}/message_templates?limit=1000`;
     
-    try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${config.accessToken}`
-        }
-      });
-
-      if (!response.ok) {
-        const errorBody = await response.text();
-        throw new Error(`Meta API error: ${response.status} ${errorBody}`);
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${config.accessToken}`
       }
+    });
 
-      const json = await response.json();
-      const templates = (json.data || []).map((t: any) => ({
+    if (!response.ok) {
+      const errorBody = await response.text();
+      throw new Error(`Meta API error: ${response.status} ${errorBody}`);
+    }
+
+    const json = await response.json();
+    const templates = json.data || [];
+    
+    // Clear old templates and insert new
+    await db.delete(whatsappTemplates);
+    
+    if (templates.length > 0) {
+      const records = templates.map((t: any) => ({
         name: t.name,
         language: t.language,
         category: t.category,
         status: t.status,
-        components: t.components || []
+        components: t.components || [],
+        metaTemplateId: t.id,
+        lastSyncedAt: new Date()
       }));
       
-      this.templateCache = {
-        data: templates,
-        timestamp: Date.now()
-      };
-
-      return templates;
-    } catch (error) {
-      if (useCache && this.templateCache) {
-        // Fallback to stale cache
-        return this.templateCache.data;
-      }
-      throw error;
+      await db.insert(whatsappTemplates).values(records);
     }
+    
+    return templates;
   }
 
-  static async uploadMedia(filePath: string, mimeType: string): Promise<string> {
+  static async getTemplates(): Promise<any[]> {
+    const templates = await db.select().from(whatsappTemplates);
+    return templates;
+  }
+
+  static async uploadMedia(filePathOrBuffer: string | Buffer, mimeType: string): Promise<string> {
     const config = await ProviderConfigurationService.getMetaConfiguration();
     if (!config || !config.accessToken || !config.phoneNumberId) {
       throw new Error('Meta provider is not configured properly (missing phone number ID).');
     }
 
     const url = `https://graph.facebook.com/${config.apiVersion}/${config.phoneNumberId}/media`;
-
     const formData = new FormData();
     formData.append('messaging_product', 'whatsapp');
     
-    const fs = await import('fs/promises');
-    const path = await import('path');
-    const buffer = await fs.readFile(filePath);
-    const blob = new Blob([buffer], { type: mimeType });
-    formData.append('file', blob, path.basename(filePath));
+    let buffer: Buffer;
+    let filename = 'media';
+    
+    if (typeof filePathOrBuffer === 'string') {
+      const fs = await import('fs/promises');
+      const path = await import('path');
+      buffer = await fs.readFile(filePathOrBuffer);
+      filename = path.basename(filePathOrBuffer);
+    } else {
+      buffer = filePathOrBuffer;
+      filename = mimeType === 'image/png' ? 'test_image.png' : 'media';
+    }
+
+    const blob = new Blob([new Uint8Array(buffer)], { type: mimeType });
+    formData.append('file', blob, filename);
 
     const response = await fetch(url, {
       method: 'POST',

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { ErrorBoundary } from 'react-error-boundary';
-import { LayoutDashboard, Zap, Send, MapPin, Settings as SettingsIcon, Info, Moon, Sun, Menu, LogOut, MessageSquare, Activity, Key } from 'lucide-react';
+import { LayoutDashboard, Zap, Send, MapPin, Settings as SettingsIcon, Info, Moon, Sun, Menu, LogOut, MessageSquare, Activity, Key, Smartphone } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { useAuth } from '../contexts/AuthContext';
@@ -47,6 +47,7 @@ export default function DashboardLayout() {
     { name: 'Events', path: '/dashboard/events', icon: Zap },
     { name: 'Deliveries', path: '/dashboard/deliveries', icon: Send },
     { name: 'Communications', path: '/dashboard/communications', icon: MessageSquare },
+    { name: 'WhatsApp Templates', path: '/dashboard/templates', icon: Smartphone },
     { name: 'Destinations', path: '/dashboard/destinations', icon: MapPin },
     { name: 'Settings', path: '/dashboard/settings', icon: SettingsIcon },
     { name: 'API Keys', path: '/dashboard/settings/api-keys', icon: Key },

@@ -57,58 +57,46 @@ export default function CommunicationDetails() {
       { id: 'REPLIED', name: 'Customer Replied', status: 'pending' },
     ];
 
-    // Add FAILED to the logical progression if it's the current status
-    if (message.status === 'FAILED') {
-      const lastCompletedIdx = baseSteps.reduce((acc, step, idx) => {
-        return message.timeline?.find((t: any) => t.status === step.id) ? idx : acc;
-      }, -1);
-      
-      return baseSteps.map((step, idx) => {
-        const dbEntry = message.timeline?.find((t: any) => t.status === step.id);
+    const actualSteps: any[] = [];
+    let currentIdx = -1;
+
+    // 1. Add all steps that actually happened in order
+    if (message.timeline && message.timeline.length > 0) {
+      message.timeline.forEach((dbEntry: any, index: number) => {
+        const isLast = index === message.timeline.length - 1;
+        const isFailed = message.status === 'FAILED' && dbEntry.status === 'FAILED';
         
-        let status = 'pending';
-        if (dbEntry || idx <= lastCompletedIdx) {
-          status = 'completed';
+        actualSteps.push({
+          id: dbEntry.status,
+          name: dbEntry.description,
+          status: isFailed ? 'failed' : (isLast && message.status !== 'META_ACCEPTED' && !['DELIVERED', 'READ', 'REPLIED'].includes(message.status) ? 'current' : 'completed'),
+          timestamp: dbEntry.createdAt
+        });
+
+        // Track how far we've progressed in the baseSteps logical flow
+        const baseIdx = baseSteps.findIndex(b => b.id === dbEntry.status);
+        if (baseIdx > currentIdx) {
+          currentIdx = baseIdx;
         }
-        
-        return {
-          name: dbEntry ? dbEntry.description : step.name,
-          status,
-          timestamp: dbEntry?.createdAt
-        };
-      }).concat({
-        name: message.timeline?.find((t: any) => t.status === 'FAILED')?.description || 'Failed',
-        status: 'failed',
-        timestamp: message.timeline?.find((t: any) => t.status === 'FAILED')?.createdAt
       });
     }
 
-    const currentIdx = baseSteps.findIndex(s => s.id === message.status);
-    
-    return baseSteps.map((step, idx) => {
-      // If we have a matching DB timeline entry, use its description
-      const dbEntry = message.timeline?.find((t: any) => t.status === step.id);
-      
-      let status = 'pending';
-      if (idx < currentIdx) status = 'completed';
-      if (idx === currentIdx) status = 'current';
+    // 2. If it's failed, we don't show future pending steps
+    if (message.status === 'FAILED') {
+       return actualSteps;
+    }
 
-      // Mark as completed if the message has passed this state but we don't have an exact match in the simple DB check
-      if (status === 'pending' && currentIdx > idx) {
-         status = 'completed';
-      }
-      
-      // If it exists in DB, it is definitely completed (even if currentIdx doesn't match perfectly)
-      if (dbEntry && status === 'pending') {
-         status = 'completed';
-      }
+    // 3. Add future steps from baseSteps
+    for (let i = currentIdx + 1; i < baseSteps.length; i++) {
+      actualSteps.push({
+        id: baseSteps[i].id,
+        name: baseSteps[i].name,
+        status: 'pending',
+        timestamp: null
+      });
+    }
 
-      return {
-        name: dbEntry ? dbEntry.description : step.name,
-        status,
-        timestamp: dbEntry?.createdAt
-      };
-    });
+    return actualSteps;
   };
 
   const timelineSteps = getTimelineSteps();

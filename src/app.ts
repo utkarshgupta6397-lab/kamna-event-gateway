@@ -11,6 +11,7 @@ import { providerRoutes } from './routes/providers';
 import { webhookRoutes } from './routes/webhooks';
 import { diagnosticsRoutes } from './routes/diagnostics';
 import { settingsRoutes } from './routes/settings';
+import { templateRoutes } from './routes/templates';
 import { TransportRegistry } from './domain/transport';
 import { HttpTransport } from './transports/httpTransport';
 import fastifyRateLimit from '@fastify/rate-limit';
@@ -92,6 +93,7 @@ export const buildApp = (): FastifyInstance => {
   app.register(webhookRoutes, { prefix: '/api/v1/webhooks' });
   app.register(diagnosticsRoutes, { prefix: '/api/v1/diagnostics' });
   app.register(settingsRoutes, { prefix: '/api/v1/settings' });
+  app.register(templateRoutes, { prefix: '/api/v1/templates' });
 
   // Serve Frontend conditionally
   const uiDistPath = path.join(__dirname, '../ui/dist');

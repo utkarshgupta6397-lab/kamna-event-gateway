@@ -2,6 +2,8 @@
 import { Transport, TransportResponse } from './Transport';
 import { MetaApiService } from '../services/metaApiService';
 import { MetaMapper } from '../mappers/metaMapper';
+import { db } from '../db';
+import { communicationTimeline } from '../db/schema';
 
 export interface MetaTransportConfig {
   accessToken?: string;
@@ -27,10 +29,12 @@ export class MetaTransport implements Transport {
       throw new Error('META_ACCESS_TOKEN and META_PHONE_NUMBER_ID are required and must be provided via config.');
     }
 
+    const messageId = message.messageId;
+
     try {
       const url = `https://graph.facebook.com/${apiVersion}/${phoneNumberId}/messages`;
       
-      const templates = await MetaApiService.getTemplates(true);
+      const templates = await MetaApiService.getTemplates(); // removed caching logic flag since it uses DB now
       const targetLanguage = message.metadata?.language || defaultLanguage;
       
       // If the ERP explicitly asked for a language, match it. If not, match name and use its language.
@@ -42,11 +46,31 @@ export class MetaTransport implements Transport {
 
       let mediaId: string | undefined;
       
-      if (message.metadata?.mediaFilePath) {
+      if (message.metadata?.mediaFilePath || message.metadata?.mediaBase64) {
+        if (messageId) {
+          await db.insert(communicationTimeline).values({
+            messageId,
+            status: 'PROCESSING',
+            description: 'Media Upload Request',
+            metadata: { file: message.metadata.mediaFilePath },
+            createdAt: new Date(),
+          });
+        }
+        
         mediaId = await MetaApiService.uploadMedia(
-          message.metadata.mediaFilePath,
+          message.metadata.mediaFilePath || Buffer.from((message.metadata.mediaBase64 as string).split(',')[1] || (message.metadata.mediaBase64 as string), 'base64'),
           message.metadata.mediaMimeType || 'application/octet-stream'
         );
+        
+        if (messageId) {
+          await db.insert(communicationTimeline).values({
+            messageId,
+            status: 'PROCESSING',
+            description: 'Media Uploaded',
+            metadata: { mediaId },
+            createdAt: new Date(),
+          });
+        }
       }
 
       const templatePayload = MetaMapper.buildMetaTemplatePayload(
@@ -63,6 +87,16 @@ export class MetaTransport implements Transport {
         type: 'template',
         template: templatePayload
       };
+
+      if (messageId) {
+        await db.insert(communicationTimeline).values({
+          messageId,
+          status: 'SENDING',
+          description: 'Template Sent',
+          metadata: { payload },
+          createdAt: new Date(),
+        });
+      }
 
       const startTime = performance.now();
 

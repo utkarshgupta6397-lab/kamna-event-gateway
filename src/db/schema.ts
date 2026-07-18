@@ -149,3 +149,17 @@ export const apiKeys = sqliteTable('api_keys', {
 
 export type ApiKeyRecord = typeof apiKeys.$inferSelect;
 export type NewApiKeyRecord = typeof apiKeys.$inferInsert;
+
+export const whatsappTemplates = sqliteTable('whatsapp_templates', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
+  language: text('language').notNull(),
+  category: text('category').notNull(),
+  status: text('status').notNull(),
+  components: text('components', { mode: 'json' }).notNull(),
+  metaTemplateId: text('meta_template_id'),
+  lastSyncedAt: integer('last_synced_at', { mode: 'timestamp' }).notNull(),
+});
+
+export type WhatsappTemplateRecord = typeof whatsappTemplates.$inferSelect;
+export type NewWhatsappTemplateRecord = typeof whatsappTemplates.$inferInsert;
