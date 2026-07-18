@@ -5,6 +5,8 @@ import { whatsappTemplates } from '../db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { MetaApiService } from '../services/metaApiService';
 
+import { MetaMapper } from '../mappers/metaMapper';
+
 export const templateRoutes: FastifyPluginAsync = async (app: FastifyInstance) => {
   // Get all templates from local DB
   app.get('/', async (_request, reply) => {
@@ -43,10 +45,8 @@ export const templateRoutes: FastifyPluginAsync = async (app: FastifyInstance) =
         return reply.status(404).send({ success: false, error: 'Template not found locally' });
       }
 
-      // Check if it's a media template
       const components = typeof template.components === 'string' ? JSON.parse(template.components) : template.components;
-      const header = components.find((c: any) => c.type === 'HEADER');
-      const isMedia = header && ['IMAGE', 'DOCUMENT', 'VIDEO'].includes(header.format);
+      const requirements = MetaMapper.getTemplateRequirements(components);
 
       const payload: any = {
         channel: 'whatsapp',
@@ -55,18 +55,15 @@ export const templateRoutes: FastifyPluginAsync = async (app: FastifyInstance) =
         language: template.language,
         source: 'gateway-dashboard-template-test',
         requestedBy: 'developer',
-        variables: []
+        variables: Array.from({ length: requirements.expectedVariables }, (_, i) => `TEST_${i + 1}`)
       };
 
-      if (isMedia) {
+      if (requirements.requiresMedia) {
         // Generate a 1x1 valid PNG in memory
         const base64Data = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
         payload.metadata = {
           mediaBase64: base64Data
         };
-        // Provide dummy variables based on components (example: find max {{#}} in text)
-        // For testing we will just pass a few dummy variables
-        payload.variables = ['TEST1', 'TEST2', 'TEST3']; 
       }
 
       const response = await app.inject({
