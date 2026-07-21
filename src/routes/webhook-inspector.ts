@@ -40,26 +40,39 @@ export const webhookInspectorRoutes = async (fastify: FastifyInstance) => {
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-    const logs = await db.select()
-      .from(providerWebhookLogs)
-      .where(whereClause)
-      .orderBy(desc(providerWebhookLogs.receivedAt))
-      .limit(limit)
-      .offset(offset);
+    try {
+      const logs = await db.select()
+        .from(providerWebhookLogs)
+        .where(whereClause)
+        .orderBy(desc(providerWebhookLogs.receivedAt))
+        .limit(limit)
+        .offset(offset);
 
-    const [{ count }] = await db.select({ count: sql<number>`count(*)` })
-      .from(providerWebhookLogs)
-      .where(whereClause);
+      const [{ count }] = await db.select({ count: sql<number>`count(*)` })
+        .from(providerWebhookLogs)
+        .where(whereClause);
 
-    return reply.send({
-      data: logs,
-      meta: {
-        total: count,
-        page,
-        limit,
-        totalPages: Math.ceil(count / limit)
-      }
-    });
+      return reply.send({
+        data: logs,
+        meta: {
+          total: count,
+          page,
+          limit,
+          totalPages: Math.ceil(count / limit)
+        }
+      });
+    } catch (error) {
+      request.log.warn({ err: error }, 'Failed to query provider_webhook_logs, table might be missing');
+      return reply.send({
+        data: [],
+        meta: {
+          total: 0,
+          page,
+          limit,
+          totalPages: 1
+        }
+      });
+    }
   });
 
   fastify.delete('/prune', async (_request, reply) => {

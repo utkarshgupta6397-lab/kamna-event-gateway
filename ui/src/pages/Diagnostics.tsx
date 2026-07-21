@@ -7,6 +7,7 @@ export default function Diagnostics() {
   const safeArray = (value: any) => Array.isArray(value) ? value : [];
 
   const [state, setState] = useState<any>(null);
+  const [dbIntegrity, setDbIntegrity] = useState<any>(null);
   const [webhooks, setWebhooks] = useState<any[]>([]);
   const [logs, setLogs] = useState<any[]>([]);
   const [logFilter, setLogFilter] = useState('');
@@ -16,14 +17,16 @@ export default function Diagnostics() {
 
   const fetchData = async () => {
     try {
-      const [resState, resHooks, resLogs] = await Promise.all([
+      const [resState, resHooks, resLogs, resDb] = await Promise.all([
         apiFetch('/api/v1/diagnostics/state').then(r => r.json()),
         apiFetch('/api/v1/diagnostics/webhooks').then(r => r.json()),
-        apiFetch('/api/v1/diagnostics/logs').then(r => r.json())
+        apiFetch('/api/v1/diagnostics/logs').then(r => r.json()),
+        apiFetch('/api/v1/diagnostics/database').then(r => r.json()).catch(() => null)
       ]);
       setState(resState);
       setWebhooks(resHooks);
       setLogs(resLogs);
+      if (resDb) setDbIntegrity(resDb);
     } catch (e) {
       console.error(e);
     }
@@ -110,6 +113,32 @@ export default function Diagnostics() {
             <div className="flex justify-between"><span>Total Events Sent</span> <span className="font-mono">{state.observatory.totalEventsSent}</span></div>
           </div>
         </div>
+
+        {/* SECTION 4B: Database Integrity */}
+        {dbIntegrity && (
+          <div className={`bg-slate-900 border rounded-xl p-6 ${dbIntegrity.healthy ? 'border-slate-800' : 'border-red-500/50'}`}>
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <Activity className={dbIntegrity.healthy ? "text-emerald-500" : "text-red-500"} /> Database Integrity
+            </h2>
+            <div className="flex flex-col gap-3 text-sm">
+              <div className="flex justify-between">
+                <span>Status</span> 
+                <span className={dbIntegrity.healthy ? "text-emerald-500 font-bold" : "text-red-500 font-bold"}>{dbIntegrity.healthy ? 'Healthy' : 'Compromised'}</span>
+              </div>
+              <div className="flex justify-between"><span>Schema Version</span> <span className="font-mono">{dbIntegrity.schemaVersion}</span></div>
+              <div className="flex justify-between"><span>Pending Migrations</span> <span className={dbIntegrity.pendingMigrations === 0 ? "text-slate-400" : "text-yellow-500 font-bold"}>{dbIntegrity.pendingMigrations}</span></div>
+              
+              {!dbIntegrity.healthy && dbIntegrity.missingTables?.length > 0 && (
+                <div className="mt-2 p-3 bg-red-500/10 border border-red-500/20 rounded">
+                  <div className="text-red-400 font-bold mb-1">Missing Tables:</div>
+                  <ul className="list-disc pl-4 text-red-300 text-xs">
+                    {dbIntegrity.missingTables.map((t: string) => <li key={t}>{t}</li>)}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* SECTION 5: Test Buttons */}
