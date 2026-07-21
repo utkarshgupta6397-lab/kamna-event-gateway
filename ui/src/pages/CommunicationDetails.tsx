@@ -1,8 +1,9 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '../utils/api';
-import { ArrowLeft, Clock, Copy, Check, MessageSquare, Terminal, Zap } from 'lucide-react';
+import { ArrowLeft, Clock, Copy, Check, MessageSquare, Terminal, Zap, FileText } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 export default function CommunicationDetails() {
   const { id } = useParams();
@@ -20,11 +21,110 @@ export default function CommunicationDetails() {
   });
 
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
   const handleCopy = (text: string, section: string) => {
     navigator.clipboard.writeText(text);
     setCopiedSection(section);
     setTimeout(() => setCopiedSection(null), 2000);
+  };
+
+  const generateDebugReport = async () => {
+    if (!message) return;
+    setIsGeneratingReport(true);
+    
+    try {
+      const response = await apiFetch(`/api/v1/webhook-inspector?search=${message.messageId}&limit=100`);
+      let webhooksData = [];
+      if (response.ok) {
+        const json = await response.json();
+        webhooksData = json.data || [];
+      }
+
+      let report = `===================================
+KAMNA GATEWAY DEBUG REPORT
+===================================
+
+Communication ID: ${message.messageId}
+Event ID: ${message.eventId}
+Recipient: ${message.recipient}
+Template: ${message.template}
+Channel: ${message.channel}
+Created At: ${new Date(message.createdAt).toLocaleString()}
+Current Status: ${message.status}
+
+--- Timeline ---
+`;
+
+      if (message.timeline && message.timeline.length > 0) {
+        message.timeline.forEach((t: any) => {
+          report += `${new Date(t.createdAt).toLocaleTimeString()} ${t.status} - ${t.description}\n`;
+        });
+      } else {
+        report += `No timeline recorded.\n`;
+      }
+
+      const finalPayload = message.timeline?.find((t: any) => t.description === 'Template Sent')?.metadata?.payload || {};
+
+      report += `
+--- Provider Information ---
+Provider Message ID: ${message.providerMessageId || 'N/A'}
+HTTP Status: ${message.providerHttpStatus || 'N/A'}
+Latency: ${message.providerLatency ? message.providerLatency + 'ms' : 'N/A'}
+Accepted Timestamp: ${message.acceptedAt ? new Date(message.acceptedAt).toLocaleString() : 'N/A'}
+Provider Status: ${message.providerStatus || 'N/A'}
+
+--- Final Payload ---
+${JSON.stringify(finalPayload, null, 2)}
+
+--- Provider Response ---
+${JSON.stringify(message.providerResponse || {}, null, 2)}
+`;
+
+      if (message.status === 'FAILED') {
+        report += `
+--- Failure Details ---
+${JSON.stringify(message.providerResponse || {}, null, 2)}
+`;
+      }
+
+      report += `
+--- Latest Webhooks ---
+`;
+      if (webhooksData.length > 0) {
+        webhooksData.forEach((w: any) => {
+          report += `Timestamp: ${w.receivedAt ? new Date(w.receivedAt).toLocaleString() : 'N/A'}
+Webhook Type: ${w.eventType || 'Unknown'}
+Matched Provider Message ID: ${w.matchedProviderMessageId || 'N/A'}
+Status Transition: ${w.processingStatus}
+Processing Result: ${w.errorMessage || 'Success'}
+Raw Payload: ${w.rawBody}
+------------------------
+`;
+        });
+      } else {
+        report += `No webhooks found for this communication.\n`;
+      }
+
+      report += `
+--- Communication Metadata ---
+${JSON.stringify(message.metadata || {}, null, 2)}
+
+--- Footer ---
+Gateway Version: 0.0.1
+Database: SQLite
+Provider: ${message.provider || 'N/A'}
+Generated Timestamp: ${new Date().toLocaleString()}
+`;
+
+      await navigator.clipboard.writeText(report);
+      toast.success('Debug report copied to clipboard');
+    } catch (e) {
+      console.error(e);
+      toast.error('Failed to generate debug report');
+    } finally {
+      setIsGeneratingReport(false);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -140,6 +240,13 @@ export default function CommunicationDetails() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <button 
+            onClick={generateDebugReport}
+            disabled={isGeneratingReport}
+            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-1.5 rounded-full text-sm font-medium transition-colors border border-slate-700 disabled:opacity-50"
+          >
+            <FileText size={14} /> {isGeneratingReport ? 'Generating...' : 'Copy Debug Report'}
+          </button>
           <button 
             onClick={() => navigate(`/dashboard/settings/diagnostics/webhooks?search=${message.messageId}`)}
             className="flex items-center gap-2 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-400 px-4 py-1.5 rounded-full text-sm font-medium transition-colors border border-indigo-500/30"

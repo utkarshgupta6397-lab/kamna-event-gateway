@@ -3,10 +3,10 @@ import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '../db';
-import { outboundMessages, communicationTimeline, NewOutboundMessageRecord } from '../db/schema';
+import { outboundMessages, inboundMessages, communicationTimeline, NewOutboundMessageRecord } from '../db/schema';
 import { EventBus } from '../services/eventBus';
 import { CommunicationProcessor } from '../services/communicationProcessor';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, or, asc } from 'drizzle-orm';
 import { MetaApiService } from '../services/metaApiService';
 import { MetaMapper } from '../mappers/metaMapper';
 
@@ -32,6 +32,185 @@ export const messageRoutes: FastifyPluginAsync = async (app: FastifyInstance) =>
         .orderBy(desc(outboundMessages.createdAt))
         .limit(100); // hard limit for safety, UI handles simple pagination in-memory for now
       return reply.send({ success: true, messages });
+    } catch (error) {
+      app.log.error(error);
+      return reply.status(500).send({ success: false, error: 'Internal server error' });
+    }
+  });
+
+  app.get('/conversations', async (_request, reply) => {
+    try {
+      const outbounds = await db.select().from(outboundMessages).orderBy(desc(outboundMessages.createdAt)).limit(500);
+      const inbounds = await db.select().from(inboundMessages).orderBy(desc(inboundMessages.createdAt)).limit(500);
+
+      const map = new Map<string, any>();
+
+      // Group outbounds
+      for (const msg of outbounds) {
+        const key = msg.recipient;
+        if (!map.has(key)) {
+          map.set(key, {
+            recipient: msg.recipient,
+            customerName: msg.recipient,
+            channel: msg.channel,
+            lastActivity: msg.createdAt,
+            lastMessage: {
+              id: msg.messageId,
+              direction: 'OUTGOING',
+              text: `Template: ${msg.template}`,
+              template: msg.template,
+              status: msg.status,
+              timestamp: msg.createdAt,
+            },
+            messagesCount: 1,
+            unread: false
+          });
+        } else {
+          const conv = map.get(key);
+          conv.messagesCount += 1;
+          if (new Date(msg.createdAt) > new Date(conv.lastActivity)) {
+            conv.lastActivity = msg.createdAt;
+            conv.lastMessage = {
+              id: msg.messageId,
+              direction: 'OUTGOING',
+              text: `Template: ${msg.template}`,
+              template: msg.template,
+              status: msg.status,
+              timestamp: msg.createdAt,
+            };
+          }
+        }
+      }
+
+      // Group inbounds
+      for (const msg of inbounds) {
+        const key = msg.waId || msg.sender;
+        if (!map.has(key)) {
+          map.set(key, {
+            recipient: key,
+            customerName: msg.sender || key,
+            channel: 'whatsapp',
+            lastActivity: msg.timestamp || msg.createdAt,
+            lastMessage: {
+              id: `in_${msg.id}`,
+              direction: 'INCOMING',
+              text: msg.text || `[${msg.messageType}]`,
+              status: 'RECEIVED',
+              timestamp: msg.timestamp || msg.createdAt,
+            },
+            messagesCount: 1,
+            unread: true
+          });
+        } else {
+          const conv = map.get(key);
+          conv.messagesCount += 1;
+          if (msg.sender && msg.sender !== key) {
+            conv.customerName = msg.sender;
+          }
+          const msgTime = msg.timestamp || msg.createdAt;
+          if (new Date(msgTime) > new Date(conv.lastActivity)) {
+            conv.lastActivity = msgTime;
+            conv.lastMessage = {
+              id: `in_${msg.id}`,
+              direction: 'INCOMING',
+              text: msg.text || `[${msg.messageType}]`,
+              status: 'RECEIVED',
+              timestamp: msgTime,
+            };
+          }
+        }
+      }
+
+      const conversations = Array.from(map.values()).sort(
+        (a, b) => new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime()
+      );
+
+      return reply.send({ success: true, conversations });
+    } catch (error) {
+      app.log.error(error);
+      return reply.status(500).send({ success: false, error: 'Internal server error' });
+    }
+  });
+
+  app.get('/conversations/:recipient', async (request, reply) => {
+    try {
+      const { recipient } = request.params as { recipient: string };
+
+      const outbounds = await db
+        .select()
+        .from(outboundMessages)
+        .where(eq(outboundMessages.recipient, recipient))
+        .orderBy(asc(outboundMessages.createdAt));
+
+      const inbounds = await db
+        .select()
+        .from(inboundMessages)
+        .where(or(eq(inboundMessages.waId, recipient), eq(inboundMessages.sender, recipient)))
+        .orderBy(asc(inboundMessages.createdAt));
+
+      const timelineEntries = await db
+        .select()
+        .from(communicationTimeline)
+        .orderBy(asc(communicationTimeline.createdAt));
+
+      const timelineMap = new Map<string, any[]>();
+      for (const entry of timelineEntries) {
+        if (!timelineMap.has(entry.messageId)) {
+          timelineMap.set(entry.messageId, []);
+        }
+        timelineMap.get(entry.messageId)!.push(entry);
+      }
+
+      const unified: any[] = [];
+
+      for (const out of outbounds) {
+        unified.push({
+          id: out.messageId,
+          dbId: out.id,
+          messageId: out.messageId,
+          eventId: out.eventId,
+          direction: 'OUTGOING',
+          recipient: out.recipient,
+          channel: out.channel,
+          template: out.template,
+          variables: out.variables,
+          metadata: out.metadata,
+          status: out.status,
+          provider: out.provider,
+          providerMessageId: out.providerMessageId,
+          providerStatus: out.providerStatus,
+          providerResponse: out.providerResponse,
+          providerLatency: out.providerLatency,
+          providerHttpStatus: out.providerHttpStatus,
+          requestedBy: out.requestedBy,
+          source: out.source,
+          createdAt: out.createdAt,
+          acceptedAt: out.acceptedAt,
+          timeline: timelineMap.get(out.messageId) || [],
+          timestamp: out.createdAt
+        });
+      }
+
+      for (const inb of inbounds) {
+        unified.push({
+          id: `in_${inb.id}`,
+          dbId: inb.id,
+          direction: 'INCOMING',
+          recipient: inb.waId || inb.sender,
+          sender: inb.sender,
+          waId: inb.waId,
+          messageType: inb.messageType,
+          text: inb.text,
+          rawPayload: inb.rawPayload,
+          status: 'RECEIVED',
+          timestamp: inb.timestamp || inb.createdAt,
+          createdAt: inb.createdAt
+        });
+      }
+
+      unified.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+      return reply.send({ success: true, recipient, messages: unified });
     } catch (error) {
       app.log.error(error);
       return reply.status(500).send({ success: false, error: 'Internal server error' });
