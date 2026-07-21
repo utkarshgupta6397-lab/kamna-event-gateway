@@ -1,13 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { db } from '../db';
-import { webhookEvents, inboundMessages } from '../db/schema';
+import { webhookEvents, inboundMessages, providerWebhookLogs } from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { CommunicationProcessor } from './communicationProcessor';
 import { EventBus, EventType } from './eventBus';
 import { v4 as uuidv4 } from 'uuid';
 
 export class MetaWebhookProcessor {
-  static async processWebhook(webhookId: number) {
+  static async processWebhook(webhookId: number, logId?: number) {
+    const startTime = Date.now();
     const [webhook] = await db.select().from(webhookEvents).where(eq(webhookEvents.id, webhookId));
     if (!webhook || webhook.processed) return;
 
@@ -16,15 +17,31 @@ export class MetaWebhookProcessor {
       let matched = false;
 
       if (payload.object === 'whatsapp_business_account') {
+        if (logId) {
+          await db.update(providerWebhookLogs)
+            .set({ processingStatus: 'JSON Parsed' })
+            .where(eq(providerWebhookLogs.id, logId));
+        }
+
         for (const entry of payload.entry || []) {
           for (const change of entry.changes || []) {
             if (change.value.statuses) {
               for (const status of change.value.statuses) {
+                if (logId) {
+                  await db.update(providerWebhookLogs)
+                    .set({ eventType: 'status', matchedProviderMessageId: status.id })
+                    .where(eq(providerWebhookLogs.id, logId));
+                }
                 matched = await this.handleStatus(status) || matched;
               }
             }
             if (change.value.messages) {
               for (const message of change.value.messages) {
+                if (logId) {
+                  await db.update(providerWebhookLogs)
+                    .set({ eventType: 'message', matchedProviderMessageId: message.id })
+                    .where(eq(providerWebhookLogs.id, logId));
+                }
                 await this.handleMessage(message, change.value.contacts, payload);
                 matched = true;
               }
@@ -41,6 +58,16 @@ export class MetaWebhookProcessor {
         })
         .where(eq(webhookEvents.id, webhookId));
 
+      if (logId) {
+        await db.update(providerWebhookLogs)
+          .set({ 
+            processingStatus: 'Completed', 
+            processingTimeMs: Date.now() - startTime,
+            errorMessage: matched ? null : 'Unmatched'
+          })
+          .where(eq(providerWebhookLogs.id, logId));
+      }
+
     } catch (error: any) {
       await db.update(webhookEvents)
         .set({
@@ -48,6 +75,16 @@ export class MetaWebhookProcessor {
           retryCount: webhook.retryCount + 1
         })
         .where(eq(webhookEvents.id, webhookId));
+
+      if (logId) {
+        await db.update(providerWebhookLogs)
+          .set({ 
+            processingStatus: 'Failed', 
+            processingTimeMs: Date.now() - startTime,
+            errorMessage: error.message || 'Unknown processing error'
+          })
+          .where(eq(providerWebhookLogs.id, logId));
+      }
     }
   }
 

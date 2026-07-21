@@ -52,6 +52,7 @@ export default function DashboardLayout() {
     { name: 'Settings', path: '/dashboard/settings', icon: SettingsIcon },
     { name: 'API Keys', path: '/dashboard/settings/api-keys', icon: Key },
     { name: 'Diagnostics', path: '/dashboard/settings/diagnostics', icon: Activity },
+    { name: 'Webhook Inspector', path: '/dashboard/settings/diagnostics/webhooks', icon: Zap },
     { name: 'About', path: '/dashboard/about', icon: Info },
   ];
 

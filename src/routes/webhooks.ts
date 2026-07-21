@@ -1,11 +1,23 @@
 import { FastifyInstance } from 'fastify';
 import { ProviderConfigurationService } from '../services/ProviderConfigurationService';
 import { db } from '../db';
-import { webhookEvents } from '../db/schema';
+import { webhookEvents, providerWebhookLogs } from '../db/schema';
 import { MetaWebhookProcessor } from '../services/metaWebhookProcessor';
 
 export const webhookRoutes = async (fastify: FastifyInstance) => {
   
+  // Custom JSON parser to NEVER throw on bad JSON and always capture raw payload
+  fastify.addContentTypeParser('application/json', { parseAs: 'string' }, (req, body: string, done) => {
+    try {
+      const json = JSON.parse(body);
+      (req as any).rawBodyString = body;
+      done(null, json);
+    } catch (err) {
+      (req as any).rawBodyString = body;
+      done(null, { _invalidJson: true });
+    }
+  });
+
   // Meta Webhook Verification
   fastify.get('/meta', async (request, reply) => {
     const query = request.query as Record<string, string>;
@@ -36,24 +48,43 @@ export const webhookRoutes = async (fastify: FastifyInstance) => {
 
   // Meta Webhook Receiver
   fastify.post('/meta', async (request, reply) => {
-    const payload = request.body as Record<string, unknown>;
-    
+    const payload = request.body as any;
+    const rawBody = (request as any).rawBodyString || '';
+    const isInvalid = payload?._invalidJson;
+
     // Store webhook in DB immediately
-    const [inserted] = await db.insert(webhookEvents).values({
+    const [insertedLog] = await db.insert(providerWebhookLogs).values({
       provider: 'meta',
-      rawPayload: payload,
       receivedAt: new Date(),
+      httpMethod: request.method,
+      requestUrl: request.url,
+      headersJson: request.headers,
+      bodyJson: isInvalid ? null : payload,
+      rawBody: rawBody,
+      ipAddress: request.ip,
+      processingStatus: isInvalid ? 'Failed' : 'Received',
+      errorMessage: isInvalid ? 'Invalid JSON Payload' : null,
       createdAt: new Date(),
     }).returning();
     
+    // Also insert into old webhookEvents to not break existing engine for now
+    if (!isInvalid) {
+      const [inserted] = await db.insert(webhookEvents).values({
+        provider: 'meta',
+        rawPayload: payload,
+        receivedAt: new Date(),
+        createdAt: new Date(),
+      }).returning();
+      
+      // Process asynchronously
+      MetaWebhookProcessor.processWebhook(inserted.id, insertedLog.id).catch(err => {
+        // eslint-disable-next-line no-console
+        console.error(`Failed to process Meta webhook ${inserted.id}`, err);
+      });
+    }
+
     // Return 200 immediately
     reply.status(200).send('EVENT_RECEIVED');
-    
-    // Process asynchronously
-    MetaWebhookProcessor.processWebhook(inserted.id).catch(err => {
-      // eslint-disable-next-line no-console
-      console.error(`Failed to process Meta webhook ${inserted.id}`, err);
-    });
   });
 
 };

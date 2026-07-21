@@ -163,3 +163,27 @@ export const whatsappTemplates = sqliteTable('whatsapp_templates', {
 
 export type WhatsappTemplateRecord = typeof whatsappTemplates.$inferSelect;
 export type NewWhatsappTemplateRecord = typeof whatsappTemplates.$inferInsert;
+
+export const providerWebhookLogs = sqliteTable('provider_webhook_logs', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  provider: text('provider').notNull(),
+  receivedAt: integer('received_at', { mode: 'timestamp' }).notNull(),
+  httpMethod: text('http_method').notNull(),
+  requestUrl: text('request_url').notNull(),
+  headersJson: text('headers_json', { mode: 'json' }).notNull(),
+  bodyJson: text('body_json', { mode: 'json' }),
+  rawBody: text('raw_body'),
+  ipAddress: text('ip_address'),
+  signature: text('signature'),
+  signatureValid: integer('signature_valid', { mode: 'boolean' }),
+  processingStatus: text('processing_status').notNull().default('Received'),
+  processingTimeMs: integer('processing_time_ms'),
+  matchedCommunicationId: text('matched_communication_id'),
+  matchedProviderMessageId: text('matched_provider_message_id'),
+  eventType: text('event_type'),
+  errorMessage: text('error_message'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+});
+
+export type ProviderWebhookLogRecord = typeof providerWebhookLogs.$inferSelect;
+export type NewProviderWebhookLogRecord = typeof providerWebhookLogs.$inferInsert;

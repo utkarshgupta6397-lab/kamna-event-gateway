@@ -18,6 +18,7 @@ import Templates from './pages/Templates';
 import Settings from './pages/Settings';
 import ApiKeys from './pages/ApiKeys';
 import Diagnostics from './pages/Diagnostics';
+import WebhookInspector from './pages/WebhookInspector';
 import About from './pages/About';
 
 const queryClient = new QueryClient({
@@ -63,6 +64,7 @@ export default function App() {
                 <Route path="settings" element={<Settings />} />
                 <Route path="settings/api-keys" element={<ApiKeys />} />
                 <Route path="settings/diagnostics" element={<Diagnostics />} />
+                <Route path="settings/diagnostics/webhooks" element={<WebhookInspector />} />
                 <Route path="about" element={<About />} />
               </Route>
 

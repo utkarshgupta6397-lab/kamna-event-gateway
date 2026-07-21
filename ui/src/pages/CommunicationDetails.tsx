@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '../utils/api';
-import { ArrowLeft, Clock, Copy, Check, MessageSquare, Terminal } from 'lucide-react';
+import { ArrowLeft, Clock, Copy, Check, MessageSquare, Terminal, Zap } from 'lucide-react';
 import { useState } from 'react';
 
 export default function CommunicationDetails() {
@@ -139,9 +139,17 @@ export default function CommunicationDetails() {
             <span className="font-mono text-xs">{message.messageId}</span>
           </p>
         </div>
-        <span className={`px-4 py-1.5 rounded-full text-sm font-bold border uppercase tracking-wider ${getStatusColor(message.status)}`}>
-          {message.status}
-        </span>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => navigate(`/dashboard/settings/diagnostics/webhooks?search=${message.messageId}`)}
+            className="flex items-center gap-2 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-400 px-4 py-1.5 rounded-full text-sm font-medium transition-colors border border-indigo-500/30"
+          >
+            <Zap size={14} /> View Webhooks
+          </button>
+          <span className={`px-4 py-1.5 rounded-full text-sm font-bold border uppercase tracking-wider ${getStatusColor(message.status)}`}>
+            {message.status}
+          </span>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">

@@ -3,6 +3,8 @@ import { Activity, Server, Zap, Globe, MessageSquare, Cpu, Terminal, Copy } from
 import { useEventStream } from '../hooks/useEventStream';
 
 export default function Diagnostics() {
+  const safeArray = (value: any) => Array.isArray(value) ? value : [];
+
   const [state, setState] = useState<any>(null);
   const [webhooks, setWebhooks] = useState<any[]>([]);
   const [logs, setLogs] = useState<any[]>([]);
@@ -36,9 +38,9 @@ export default function Diagnostics() {
     return () => clearInterval(iv);
   }, []);
 
-  const filteredLogs = logs.filter(l => {
+  const filteredLogs = safeArray(logs).filter((l: any) => {
     if (logFilter && l.level !== logFilter) return false;
-    if (logSearch && !l.message.toLowerCase().includes(logSearch.toLowerCase())) return false;
+    if (logSearch && l.message && typeof l.message === 'string' && !l.message.toLowerCase().includes(logSearch.toLowerCase())) return false;
     return true;
   });
 
@@ -56,12 +58,12 @@ export default function Diagnostics() {
   };
 
   const copyReport = () => {
-    const report = JSON.stringify({ state, recentWebhooks: webhooks.slice(0,10), recentLogs: logs.slice(0,50) }, null, 2);
+    const report = JSON.stringify({ state, recentWebhooks: safeArray(webhooks).slice(0,10), recentLogs: safeArray(logs).slice(0,50) }, null, 2);
     navigator.clipboard.writeText(report);
     alert('Diagnostics Report Copied!');
   };
 
-  if (!state) return <div className="p-8 text-slate-400">Loading diagnostics...</div>;
+  if (!state || !state.health || !state.meta || !state.system || !state.observatory) return <div className="p-8 text-slate-400">Loading diagnostics...</div>;
 
   return (
     <div className="p-8 max-w-7xl mx-auto flex flex-col gap-8 pb-20">
@@ -79,7 +81,7 @@ export default function Diagnostics() {
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><Server className="text-emerald-500" /> Gateway Health</h2>
           <div className="flex flex-col gap-3">
-            {Object.entries(state.health).map(([k, v]) => (
+            {Object.entries(state.health || {}).map(([k, v]) => (
               <div key={k} className="flex items-center justify-between text-sm">
                 <span className="capitalize">{k.replace(/([A-Z])/g, ' $1').trim()}</span>
                 {v ? <span className="text-emerald-500 font-bold">✓ Running</span> : <span className="text-red-500 font-bold">✗ Offline</span>}
@@ -141,7 +143,7 @@ export default function Diagnostics() {
           </div>
           <div className="p-4 bg-slate-950 rounded border border-slate-800 shadow-inner">
             <div className="text-slate-500 mb-1">CPU Load</div>
-            <div className="text-lg font-mono text-slate-200">{state.system.cpu[0]?.toFixed(2) || '0.00'}</div>
+            <div className="text-lg font-mono text-slate-200">{safeArray(state.system.cpu)[0]?.toFixed(2) || '0.00'}</div>
           </div>
         </div>
       </div>
@@ -160,16 +162,16 @@ export default function Diagnostics() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/50">
-              {webhooks.map((w: any) => (
+              {safeArray(webhooks).map((w: any) => (
                 <tr key={w.id} className="hover:bg-slate-800/30 transition-colors">
-                  <td className="py-3 px-4 text-xs font-mono text-slate-400">{new Date(w.receivedAt).toLocaleString()}</td>
+                  <td className="py-3 px-4 text-xs font-mono text-slate-400">{w.receivedAt ? new Date(w.receivedAt).toLocaleString() : 'N/A'}</td>
                   <td className="py-3 px-4">
                     {w.processed ? <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-500/10 text-green-400">Processed</span> : 
                      w.processingError ? <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-500/10 text-red-400">Rejected</span> : 
                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-500/10 text-yellow-400">Ignored</span>}
                   </td>
                   <td className="py-3 px-4 text-xs text-red-300 max-w-[150px] truncate">{w.processingError || '-'}</td>
-                  <td className="py-3 px-4 text-xs font-mono text-slate-500 truncate max-w-xl">{JSON.stringify(w.rawPayload)}</td>
+                  <td className="py-3 px-4 text-xs font-mono text-slate-500 truncate max-w-xl">{JSON.stringify(w.rawPayload || {})}</td>
                 </tr>
               ))}
             </tbody>
