@@ -21,8 +21,6 @@ export default function Communications() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
-  const [successMediaId, setSuccessMediaId] = useState<string | null>(null);
-
   const { data, isLoading, error } = useQuery({
     queryKey: ['communications'],
     queryFn: async () => {
