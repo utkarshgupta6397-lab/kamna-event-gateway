@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '../utils/api';
-import { Search, Filter, MessageSquare, ChevronRight, Send, Image as ImageIcon } from 'lucide-react';
+import { Search, Filter, MessageSquare, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface CommunicationRecord {
@@ -21,68 +21,7 @@ export default function Communications() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
-  const [isSending, setIsSending] = useState(false);
-
-  const handleSendTestMessage = async () => {
-    setIsSending(true);
-    try {
-      const response = await apiFetch('/api/v1/messages/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          channel: 'whatsapp',
-          recipient: '918744832318',
-          template: 'hello_world', // standard Meta sandbox template
-          variables: [],
-          source: 'gateway-dashboard',
-          requestedBy: 'developer'
-        })
-      });
-      if (response.ok) {
-        // Will refresh automatically via useQuery interval
-      }
-    } catch (e) {
-      console.error('Failed to send test message', e);
-    } finally {
-      setIsSending(false);
-    }
-  };
-
-  const [isSendingMedia, setIsSendingMedia] = useState(false);
   const [successMediaId, setSuccessMediaId] = useState<string | null>(null);
-
-  const handleSendTestMediaTemplate = async () => {
-    setIsSendingMedia(true);
-    setSuccessMediaId(null);
-    try {
-      const base64Data = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
-      
-      const response = await apiFetch('/api/v1/messages/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          channel: 'whatsapp',
-          recipient: '918744832318',
-          template: 'dcr_issued_v1',
-          language: 'en',
-          variables: ['KT/26-27/1233'],
-          metadata: {
-            mediaBase64: base64Data
-          },
-          source: 'gateway-dashboard',
-          requestedBy: 'developer'
-        })
-      });
-      if (response.ok) {
-        const result = await response.json();
-        setSuccessMediaId(result.gatewayMessageId);
-      }
-    } catch (e) {
-      console.error('Failed to send test media message', e);
-    } finally {
-      setIsSendingMedia(false);
-    }
-  };
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['communications'],
