@@ -1,4 +1,8 @@
-import { FastifyInstance } from 'fastify';
+import { FastifyInstance, FastifyRequest } from 'fastify';
+
+interface CustomRequest extends FastifyRequest {
+  rawBodyString?: string;
+}
 import { ProviderConfigurationService } from '../services/ProviderConfigurationService';
 import { db } from '../db';
 import { webhookEvents, providerWebhookLogs } from '../db/schema';
@@ -10,10 +14,10 @@ export const webhookRoutes = async (fastify: FastifyInstance) => {
   fastify.addContentTypeParser('application/json', { parseAs: 'string' }, (req, body: string, done) => {
     try {
       const json = JSON.parse(body);
-      (req as any).rawBodyString = body;
+      (req as CustomRequest).rawBodyString = body;
       done(null, json);
     } catch (err) {
-      (req as any).rawBodyString = body;
+      (req as CustomRequest).rawBodyString = body;
       done(null, { _invalidJson: true });
     }
   });
@@ -48,8 +52,8 @@ export const webhookRoutes = async (fastify: FastifyInstance) => {
 
   // Meta Webhook Receiver
   fastify.post('/meta', async (request, reply) => {
-    const payload = request.body as any;
-    const rawBody = (request as any).rawBodyString || '';
+    const payload = request.body as Record<string, unknown> & { _invalidJson?: boolean };
+    const rawBody = (request as CustomRequest).rawBodyString || '';
     const isInvalid = payload?._invalidJson;
 
     // Store webhook in DB immediately
