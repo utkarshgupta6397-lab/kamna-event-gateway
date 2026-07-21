@@ -71,22 +71,6 @@ export default function Communications() {
           </p>
         </div>
       </header>
-      
-      {successMediaId && (
-        <div className="px-6 py-3 bg-indigo-500/10 border-b border-indigo-500/20 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-indigo-400 text-sm font-medium">
-            <span className="flex items-center justify-center w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-400">✓</span>
-            Test Media Template queued successfully (Communication ID: {successMediaId})
-          </div>
-          <button
-            onClick={() => navigate(`/dashboard/communications/${successMediaId}`)}
-            className="px-3 py-1.5 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 rounded text-xs font-medium transition-colors"
-          >
-            Open Communication
-          </button>
-        </div>
-      )}
-
       <div className="p-6 flex-1 flex flex-col gap-4 overflow-hidden">
         {/* Controls */}
         <div className="flex items-center gap-4">
