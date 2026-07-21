@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Activity, Server, Zap, Globe, MessageSquare, Cpu, Terminal, Copy } from 'lucide-react';
 import { useEventStream } from '../hooks/useEventStream';
+import { apiFetch } from '../utils/api';
 
 export default function Diagnostics() {
   const safeArray = (value: any) => Array.isArray(value) ? value : [];
@@ -16,9 +17,9 @@ export default function Diagnostics() {
   const fetchData = async () => {
     try {
       const [resState, resHooks, resLogs] = await Promise.all([
-        fetch('/api/v1/diagnostics/state').then(r => r.json()),
-        fetch('/api/v1/diagnostics/webhooks').then(r => r.json()),
-        fetch('/api/v1/diagnostics/logs').then(r => r.json())
+        apiFetch('/api/v1/diagnostics/state').then(r => r.json()),
+        apiFetch('/api/v1/diagnostics/webhooks').then(r => r.json()),
+        apiFetch('/api/v1/diagnostics/logs').then(r => r.json())
       ]);
       setState(resState);
       setWebhooks(resHooks);
@@ -46,7 +47,7 @@ export default function Diagnostics() {
 
   const runTest = async (action: string, payload?: any) => {
     try {
-      await fetch(`/api/v1/debug/${action}`, {
+      await apiFetch(`/api/v1/debug/${action}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: payload ? JSON.stringify(payload) : undefined

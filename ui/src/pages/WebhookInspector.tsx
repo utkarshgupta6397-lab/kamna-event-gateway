@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { RefreshCw, Search, Filter, Webhook, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { WebhookDetailsDrawer } from '../components/WebhookDetailsDrawer';
+import { apiFetch } from '../utils/api';
 
 export default function WebhookInspector() {
   const [searchParams] = useSearchParams();
@@ -28,7 +29,7 @@ export default function WebhookInspector() {
         ...(typeFilter !== 'All' ? { eventType: typeFilter } : {}),
       });
 
-      const res = await fetch(`/api/v1/webhook-inspector?${params.toString()}`);
+      const res = await apiFetch(`/api/v1/webhook-inspector?${params.toString()}`);
       if (res.ok) {
         const json = await res.json();
         setWebhooks(json.data || []);
