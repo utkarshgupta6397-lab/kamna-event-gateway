@@ -47,27 +47,29 @@ export class MetaTransport implements Transport {
       let mediaId: string | undefined;
       
       if (message.metadata?.mediaFilePath || message.metadata?.mediaBase64) {
+        const uploadResult = await MetaApiService.uploadMedia(
+          message.metadata.mediaFilePath || Buffer.from((message.metadata.mediaBase64 as string).split(',')[1] || (message.metadata.mediaBase64 as string), 'base64'),
+          message.metadata.mediaMimeType || 'application/octet-stream'
+        );
+
         if (messageId) {
           await db.insert(communicationTimeline).values({
             messageId,
             status: 'PROCESSING',
             description: 'Media Upload Request',
-            metadata: { file: message.metadata.mediaFilePath },
+            metadata: uploadResult.requestDetails,
             createdAt: new Date(),
           });
         }
         
-        mediaId = await MetaApiService.uploadMedia(
-          message.metadata.mediaFilePath || Buffer.from((message.metadata.mediaBase64 as string).split(',')[1] || (message.metadata.mediaBase64 as string), 'base64'),
-          message.metadata.mediaMimeType || 'application/octet-stream'
-        );
+        mediaId = uploadResult.id;
         
         if (messageId) {
           await db.insert(communicationTimeline).values({
             messageId,
             status: 'PROCESSING',
             description: 'Media Uploaded',
-            metadata: { mediaId },
+            metadata: { mediaId, httpStatus: uploadResult.httpStatus, response: uploadResult.response },
             createdAt: new Date(),
           });
         }

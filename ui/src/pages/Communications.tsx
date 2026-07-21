@@ -133,25 +133,6 @@ export default function Communications() {
             Single source of truth for every outbound communication.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleSendTestMessage}
-            disabled={isSending || isSendingMedia}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-white rounded-lg font-medium transition-colors text-sm"
-          >
-            {isSending ? <span className="w-4 h-4 border-2 border-slate-300 border-t-transparent rounded-full animate-spin" /> : <Send size={16} />}
-            Send Test Template
-          </button>
-          
-          <button
-            onClick={handleSendTestMediaTemplate}
-            disabled={isSending || isSendingMedia}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg font-medium transition-colors text-sm"
-          >
-            {isSendingMedia ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <ImageIcon size={16} />}
-            Send Test Media Template
-          </button>
-        </div>
       </header>
       
       {successMediaId && (

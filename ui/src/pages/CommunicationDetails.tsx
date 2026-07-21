@@ -254,6 +254,121 @@ export default function CommunicationDetails() {
             </div>
           )}
 
+          {/* Failure Details */}
+          {message.status === 'FAILED' && message.providerResponse && (
+            <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-6">
+              <h2 className="text-lg font-semibold text-red-400 mb-4 flex items-center gap-2">
+                Failure Details
+              </h2>
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div>
+                  <p className="text-xs text-slate-500 mb-1">HTTP Status</p>
+                  <p className="font-mono text-sm text-red-300">{message.providerHttpStatus}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 mb-1">Error Code</p>
+                  <p className="font-mono text-sm text-red-300">{message.providerResponse.error?.code || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 mb-1">Error Subcode</p>
+                  <p className="font-mono text-sm text-red-300">{message.providerResponse.error?.error_subcode || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 mb-1">Error Type</p>
+                  <p className="font-mono text-sm text-red-300">{message.providerResponse.error?.type || 'N/A'}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-xs text-slate-500 mb-1">FB Trace ID</p>
+                  <p className="font-mono text-sm text-slate-300">{message.providerResponse.error?.fbtrace_id || 'N/A'}</p>
+                </div>
+              </div>
+              <div className="bg-slate-950/50 p-4 rounded-lg overflow-auto max-h-64 border border-red-500/20">
+                <pre className="text-xs font-mono text-red-300">
+                  {JSON.stringify(message.providerResponse, null, 2)}
+                </pre>
+              </div>
+            </div>
+          )}
+
+          {/* Timeline Metadata Extracted */}
+          {(() => {
+             const uploadReqEvent = message.timeline?.find((t: any) => t.description === 'Media Upload Request');
+             const uploadResEvent = message.timeline?.find((t: any) => t.description === 'Media Uploaded');
+             const sentEvent = message.timeline?.find((t: any) => t.description === 'Template Sent');
+
+             return (
+               <>
+                 {uploadReqEvent && uploadReqEvent.metadata && uploadReqEvent.metadata.filename && (
+                   <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+                     <h2 className="text-lg font-semibold text-white mb-4">Meta Upload Request</h2>
+                     <div className="grid grid-cols-2 gap-4">
+                       <div>
+                         <p className="text-xs text-slate-500 mb-1">Filename</p>
+                         <p className="font-mono text-sm text-slate-200">{uploadReqEvent.metadata.filename}</p>
+                       </div>
+                       <div>
+                         <p className="text-xs text-slate-500 mb-1">Mime Type</p>
+                         <p className="font-mono text-sm text-slate-200">{uploadReqEvent.metadata.mimeType}</p>
+                       </div>
+                       <div>
+                         <p className="text-xs text-slate-500 mb-1">File Size</p>
+                         <p className="font-mono text-sm text-slate-200">{uploadReqEvent.metadata.fileSize} bytes</p>
+                       </div>
+                       <div>
+                         <p className="text-xs text-slate-500 mb-1">Request Timestamp</p>
+                         <p className="font-mono text-sm text-slate-200">{uploadReqEvent.metadata.requestTimestamp ? new Date(uploadReqEvent.metadata.requestTimestamp).toLocaleString() : 'N/A'}</p>
+                       </div>
+                     </div>
+                   </div>
+                 )}
+
+                 {uploadResEvent && uploadResEvent.metadata && uploadResEvent.metadata.mediaId && (
+                   <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+                     <h2 className="text-lg font-semibold text-white mb-4">Meta Upload Response</h2>
+                     <div className="grid grid-cols-2 gap-4 mb-4">
+                       <div>
+                         <p className="text-xs text-slate-500 mb-1">HTTP Status</p>
+                         <p className="font-mono text-sm text-emerald-400">{uploadResEvent.metadata.httpStatus}</p>
+                       </div>
+                       <div>
+                         <p className="text-xs text-slate-500 mb-1">Media ID</p>
+                         <p className="font-mono text-sm text-slate-200">{uploadResEvent.metadata.mediaId}</p>
+                       </div>
+                     </div>
+                     {uploadResEvent.metadata.response && (
+                       <div className="bg-slate-950/50 p-4 rounded-lg overflow-auto max-h-64 border border-slate-800">
+                         <pre className="text-xs font-mono text-blue-300">
+                           {JSON.stringify(uploadResEvent.metadata.response, null, 2)}
+                         </pre>
+                       </div>
+                     )}
+                   </div>
+                 )}
+
+                 {sentEvent && sentEvent.metadata && sentEvent.metadata.payload && (
+                   <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col">
+                     <div className="flex items-center justify-between px-6 py-3 border-b border-slate-800 bg-slate-900/50">
+                       <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                         <Terminal size={14} /> Final Payload
+                       </h3>
+                       <button 
+                         onClick={() => handleCopy(JSON.stringify(sentEvent.metadata.payload, null, 2), 'payload')}
+                         className="text-slate-400 hover:text-white transition-colors"
+                       >
+                         {copiedSection === 'payload' ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
+                       </button>
+                     </div>
+                     <div className="p-4 overflow-auto max-h-64 bg-slate-950/50">
+                       <pre className="text-xs font-mono text-emerald-300">
+                         {JSON.stringify(sentEvent.metadata.payload, null, 2)}
+                       </pre>
+                     </div>
+                   </div>
+                 )}
+               </>
+             );
+          })()}
+
           {/* Variables JSON */}
           <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col">
             <div className="flex items-center justify-between px-6 py-3 border-b border-slate-800 bg-slate-900/50">

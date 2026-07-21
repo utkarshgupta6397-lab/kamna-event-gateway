@@ -61,7 +61,7 @@ export class MetaApiService {
     return templates;
   }
 
-  static async uploadMedia(filePathOrBuffer: string | Buffer, mimeType: string): Promise<string> {
+  static async uploadMedia(filePathOrBuffer: string | Buffer, mimeType: string): Promise<{ id: string, httpStatus: number, response: any, requestDetails: any }> {
     const config = await ProviderConfigurationService.getMetaConfiguration();
     if (!config || !config.accessToken || !config.phoneNumberId) {
       throw new Error('Meta provider is not configured properly (missing phone number ID).');
@@ -87,6 +87,13 @@ export class MetaApiService {
     const blob = new Blob([new Uint8Array(buffer)], { type: mimeType });
     formData.append('file', blob, filename);
 
+    const requestDetails = {
+      filename,
+      mimeType,
+      fileSize: buffer.length,
+      requestTimestamp: new Date().toISOString()
+    };
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -101,6 +108,6 @@ export class MetaApiService {
     }
 
     const json = await response.json();
-    return json.id;
+    return { id: json.id, httpStatus: response.status, response: json, requestDetails };
   }
 }

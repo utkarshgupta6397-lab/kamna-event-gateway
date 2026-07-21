@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 
 import { AuthProvider } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import Login from './pages/Login';
 
@@ -34,56 +35,53 @@ const queryClient = new QueryClient({
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-            {/* Public routes */}
-            <Route path="/login" element={<Login />} />
-            {/* Legacy root → login */}
-            <Route path="/" element={<Navigate to="/login" replace />} />
+      <ThemeProvider>
+        <BrowserRouter>
+          <AuthProvider>
+            <Routes>
+              {/* Public routes */}
+              <Route path="/login" element={<Login />} />
+              {/* Legacy root → login */}
+              <Route path="/" element={<Navigate to="/login" replace />} />
 
-            {/* Protected routes */}
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <DashboardLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<Dashboard />} />
-              <Route path="events" element={<Events />} />
-              <Route path="deliveries" element={<Deliveries />} />
-              <Route path="destinations" element={<Destinations />} />
-              <Route path="communications" element={<Communications />} />
-              <Route path="communications/:id" element={<CommunicationDetails />} />
-              <Route path="templates" element={<Templates />} />
-              <Route path="settings" element={<Settings />} />
-              <Route path="settings/api-keys" element={<ApiKeys />} />
-              <Route path="settings/diagnostics" element={<Diagnostics />} />
-              <Route path="about" element={<About />} />
-            </Route>
+              {/* Protected routes */}
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Dashboard />} />
+                <Route path="events" element={<Events />} />
+                <Route path="deliveries" element={<Deliveries />} />
+                <Route path="destinations" element={<Destinations />} />
+                <Route path="communications" element={<Communications />} />
+                <Route path="communications/:id" element={<CommunicationDetails />} />
+                <Route path="templates" element={<Templates />} />
+                <Route path="settings" element={<Settings />} />
+                <Route path="settings/api-keys" element={<ApiKeys />} />
+                <Route path="settings/diagnostics" element={<Diagnostics />} />
+                <Route path="about" element={<About />} />
+              </Route>
 
-            {/* Catch-all → login */}
-            <Route path="*" element={<Navigate to="/login" replace />} />
-          </Routes>
+              {/* Catch-all → login */}
+              <Route path="*" element={<Navigate to="/login" replace />} />
+            </Routes>
 
-          <Toaster
-            position="bottom-right"
-            theme="dark"
-            richColors
-            closeButton
-            toastOptions={{
-              duration: 4000,
-              style: {
-                background: 'rgb(15 23 42)',   // slate-950
-                border: '1px solid rgb(51 65 85)',  // slate-700
-                color: 'rgb(226 232 240)',       // slate-200
-              },
-            }}
-          />
-        </AuthProvider>
-      </BrowserRouter>
+            <Toaster
+              position="bottom-right"
+              richColors
+              closeButton
+              toastOptions={{
+                duration: 4000,
+                className: 'dark:bg-slate-950 dark:border-slate-700 dark:text-slate-200 bg-white border-slate-200 text-slate-800'
+              }}
+            />
+          </AuthProvider>
+        </BrowserRouter>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
