@@ -270,16 +270,27 @@ export default function Communications() {
   const handleScroll = useCallback(() => {
     const el = chatContainerRef.current;
     if (!el) return;
-    setIsAtBottom(el.scrollHeight - el.scrollTop - el.clientHeight < 100);
+    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+    setIsAtBottom(atBottom);
   }, []);
 
-  const scrollToBottom = () => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
+    chatEndRef.current?.scrollIntoView({ behavior });
+  }, []);
 
+  /* Automatically scroll to newest message when selecting/changing conversation */
+  useEffect(() => {
+    setIsAtBottom(true);
+    const timer = setTimeout(() => {
+      chatEndRef.current?.scrollIntoView({ behavior: 'auto' });
+    }, 60);
+    return () => clearTimeout(timer);
+  }, [selectedRecipient]);
+
+  /* Stay pinned to bottom on new messages only if already at bottom */
   useEffect(() => {
     if (isAtBottom) {
-      scrollToBottom();
+      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [chatMessages, isAtBottom]);
 
@@ -489,12 +500,12 @@ export default function Communications() {
   }, [chatMessages]);
 
   return (
-    <div className="h-full flex bg-[#0b141a] text-slate-200 overflow-hidden font-sans select-none">
+    <div className="h-full w-full flex bg-[#0b141a] text-slate-200 overflow-hidden font-sans select-none flex-1 min-h-0">
 
       {/* ═════════════════════════════════════════════════════════════════ */}
       {/* COLUMN 1 — CONVERSATION LIST (320px)                              */}
       {/* ═════════════════════════════════════════════════════════════════ */}
-      <div className="w-[320px] flex-none flex flex-col border-r border-slate-800/70 bg-[#111b21] z-20">
+      <div className="w-[320px] flex-none flex flex-col border-r border-slate-800/70 bg-[#111b21] z-20 h-full overflow-hidden">
 
         {/* Top Header */}
         <div className="p-3 bg-[#202c33] border-b border-slate-800/80 flex items-center justify-between">
@@ -649,7 +660,7 @@ export default function Communications() {
       {/* ═════════════════════════════════════════════════════════════════ */}
       {/* COLUMN 2 — CONVERSATION VIEW (FLEXIBLE)                           */}
       {/* ═════════════════════════════════════════════════════════════════ */}
-      <div className="flex-1 flex flex-col min-w-0 relative bg-[#0b141a]">
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative bg-[#0b141a]">
 
         {/* WhatsApp Background Pattern Tint */}
         <div
@@ -706,7 +717,7 @@ export default function Communications() {
 
                 {/* Scroll to bottom */}
                 <button
-                  onClick={scrollToBottom}
+                  onClick={() => scrollToBottom('smooth')}
                   className="p-2 rounded-full hover:bg-slate-700/50 transition-colors"
                   title="Jump to latest"
                 >
@@ -1068,7 +1079,7 @@ export default function Communications() {
       {/* COLUMN 3 — INSPECTOR SIDEBAR (360px, COLLAPSIBLE)                 */}
       {/* ═════════════════════════════════════════════════════════════════ */}
       {isInspectorOpen && (
-        <div className="w-[360px] flex-none flex flex-col border-l border-slate-800/80 bg-[#111b21] z-20 transition-all">
+        <div className="w-[360px] flex-none flex flex-col border-l border-slate-800/80 bg-[#111b21] z-20 transition-all h-full overflow-hidden">
 
           {/* Inspector Header */}
           <div className="p-3 bg-[#202c33] border-b border-slate-800/80 flex items-center justify-between">

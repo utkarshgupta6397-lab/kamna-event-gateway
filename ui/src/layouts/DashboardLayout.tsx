@@ -57,7 +57,7 @@ export default function DashboardLayout() {
   ];
 
   return (
-    <div className={cn("min-h-screen flex bg-background text-foreground", isDark && "dark")}>
+    <div className={cn("h-screen flex overflow-hidden bg-background text-foreground", isDark && "dark")}>
       {/* Sidebar */}
       <aside className={cn(
         "fixed inset-y-0 left-0 z-50 w-64 border-r bg-card transition-transform lg:translate-x-0 lg:static",
@@ -95,8 +95,8 @@ export default function DashboardLayout() {
       </aside>
 
       {/* Main Content */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <header className="flex h-16 items-center justify-between border-b bg-card px-6">
+      <div className="flex flex-1 flex-col overflow-hidden h-full">
+        <header className="flex h-16 items-center justify-between border-b bg-card px-6 flex-none">
           <button
             onClick={() => setSidebarOpen(true)}
             className="lg:hidden text-muted-foreground hover:text-foreground"
@@ -122,7 +122,7 @@ export default function DashboardLayout() {
           </div>
         </header>
 
-        <main className="flex-1 overflow-auto bg-muted/40 relative flex flex-col">
+        <main className="flex-1 min-h-0 overflow-auto bg-muted/40 relative flex flex-col">
           <ErrorBoundary
             key={location.pathname}
             fallbackRender={({ error, resetErrorBoundary }: { error: any, resetErrorBoundary: any }) => (
