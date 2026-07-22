@@ -22,6 +22,7 @@ export default function ProvidersSettings() {
       defaultLanguage: 'en_US',
       testPhoneNumber: '',
       accessToken: '',
+      appSecret: '',
       verifyToken: '',
       webhookVerified: false,
       lastVerificationAt: null as string | null,
@@ -68,6 +69,7 @@ export default function ProvidersSettings() {
               defaultLanguage: data.settings.defaultLanguage || 'en_US',
               testPhoneNumber: data.settings.testPhoneNumber || '',
               accessToken: data.settings.encryptedAccessToken ? '********' : '',
+              appSecret: data.settings.appSecret ? '********' : '',
               verifyToken: data.settings.verifyToken || '',
               webhookVerified: data.settings.webhookVerified || false,
               lastVerificationAt: data.settings.lastVerificationAt || null,
@@ -251,6 +253,19 @@ export default function ProvidersSettings() {
                   onChange={e => updateSetting('accessToken', e.target.value)} 
                   className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-indigo-500 font-mono" 
                   placeholder="EAA..." 
+                />
+                <p className="text-xs text-slate-500 mt-1">This value is encrypted securely in the database before persistence.</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1 flex items-center gap-2">
+                  App Secret <Key size={12} className="text-amber-500" />
+                </label>
+                <input 
+                  type="password" 
+                  value={config.settings.appSecret} 
+                  onChange={e => updateSetting('appSecret', e.target.value)} 
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-indigo-500 font-mono" 
+                  placeholder="Required for Webhook Signature Verification" 
                 />
                 <p className="text-xs text-slate-500 mt-1">This value is encrypted securely in the database before persistence.</p>
               </div>

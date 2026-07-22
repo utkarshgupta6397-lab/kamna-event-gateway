@@ -16,17 +16,23 @@ export const providerRoutes = async (fastify: FastifyInstance) => {
         return reply.send({ configured: false });
       }
 
-      const settings = config.rawSettings || {};
-      if (settings.encryptedAccessToken) {
-        settings.encryptedAccessToken = '********';
-      }
-      
-      // Don't leak raw encrypted token if not needed, we pass the masked settings back
       return reply.send({
         configured: true,
         enabled: config.enabled,
         isDefault: config.isDefault,
-        settings
+        settings: {
+          apiVersion: config.apiVersion,
+          phoneNumberId: config.phoneNumberId,
+          businessAccountId: config.businessAccountId,
+          defaultTemplate: config.defaultTemplate,
+          defaultLanguage: config.defaultLanguage,
+          testPhoneNumber: config.testPhoneNumber,
+          accessToken: config.accessToken ? '********' : '',
+          verifyToken: config.verifyToken,
+          appSecret: config.appSecret ? '********' : '',
+          webhookVerified: config.webhookVerified,
+          lastVerificationAt: config.lastVerificationAt,
+        }
       });
     }
 
@@ -52,16 +58,36 @@ export const providerRoutes = async (fastify: FastifyInstance) => {
     
     // Partially save just the token if the record doesn't exist, or update existing.
     // ProviderConfigurationService.saveMetaConfiguration expects a full payload. We can fetch existing first.
-    let config: Record<string, unknown> | null = await ProviderConfigurationService.getMetaConfiguration();
+    let config = await ProviderConfigurationService.getMetaConfiguration();
     if (!config) {
-      config = { enabled: false, isDefault: false, settings: {} };
+      config = { 
+        enabled: false, 
+        isDefault: false, 
+        accessToken: '', 
+        appSecret: '', 
+        verifyToken: '',
+        phoneNumberId: '',
+        businessAccountId: '',
+        apiVersion: 'v19.0',
+        defaultTemplate: '',
+        defaultLanguage: '',
+        testPhoneNumber: '',
+        webhookVerified: false,
+        lastVerificationAt: null
+      };
     }
     
     await ProviderConfigurationService.saveMetaConfiguration({
       enabled: config.enabled,
       isDefault: config.isDefault,
       settings: {
-        ...config,
+        apiVersion: config.apiVersion,
+        phoneNumberId: config.phoneNumberId,
+        businessAccountId: config.businessAccountId,
+        defaultTemplate: config.defaultTemplate,
+        defaultLanguage: config.defaultLanguage,
+        testPhoneNumber: config.testPhoneNumber,
+        appSecret: config.appSecret ? '********' : '',
         accessToken: config.accessToken ? '********' : '', // preserve access token state
         verifyToken: token,
         webhookVerified: false, // Reset verification status

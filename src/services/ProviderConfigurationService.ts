@@ -62,8 +62,7 @@ export class ProviderConfigurationService {
       verifyToken,
       appSecret,
       webhookVerified: settings.webhookVerified || false,
-      lastVerificationAt: settings.lastVerificationAt,
-      rawSettings: settings
+      lastVerificationAt: settings.lastVerificationAt
     };
   }
 
@@ -87,12 +86,12 @@ export class ProviderConfigurationService {
       settings.encryptedVerifyToken = (existing.settingsJson as Record<string, any>).encryptedVerifyToken;
     }
 
-    if (settings.appSecret) {
+    if (settings.appSecret && settings.appSecret !== '********') {
       settings.encryptedAppSecret = encrypt(settings.appSecret);
-      delete settings.appSecret;
-    } else if (existing && existing.settingsJson && (existing.settingsJson as Record<string, any>).encryptedAppSecret) {
+    } else if (settings.appSecret === '********' && existing && existing.settingsJson) {
       settings.encryptedAppSecret = (existing.settingsJson as Record<string, any>).encryptedAppSecret;
     }
+    delete settings.appSecret;
 
     if (existing) {
       await db.update(providerConfiguration)
