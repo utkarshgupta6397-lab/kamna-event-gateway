@@ -1,7 +1,6 @@
 /* eslint-disable no-console */
 
 import { buildApp } from './app';
-import { config } from 'dotenv';
 import { ProviderIds } from './constants/providers';
 import { Buffer } from 'buffer';
 import { db } from './db';

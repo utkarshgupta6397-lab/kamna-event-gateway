@@ -3,7 +3,6 @@ import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { EventBus, EventType } from '../services/eventBus';
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '../db';
-import { env } from '../config/env';
 import { ProviderIds } from '../constants/providers';
 import { outboundMessages } from '../db/schema';
 import { desc } from 'drizzle-orm';
