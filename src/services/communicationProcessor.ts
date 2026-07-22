@@ -1,5 +1,6 @@
 /* eslint-disable no-console */
 import { db } from '../db';
+import { ProviderIds } from '../constants/providers';
 import { outboundMessages, communicationTimeline } from '../db/schema';
 import { EventBus, EventType } from './eventBus';
 import { eq, desc } from 'drizzle-orm';
@@ -215,7 +216,7 @@ export class CommunicationProcessor {
           previousStatus: currentStatus,
           newStatus,
           timestamp,
-          provider: 'meta',
+          provider: ProviderIds.WHATSAPP,
           providerPayload
         },
         receivedAt: new Date(),

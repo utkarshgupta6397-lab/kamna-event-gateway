@@ -1,6 +1,8 @@
 /* eslint-disable no-console */
 
 import { buildApp } from './app';
+import { config } from 'dotenv';
+import { ProviderIds } from './constants/providers';
 import { Buffer } from 'buffer';
 import { db } from './db';
 import { apiKeys } from './db/schema';
@@ -30,7 +32,7 @@ async function runE2E() {
   const base64Data = `data:image/png;base64,${dummyImage.toString('base64')}`;
 
   const payload = {
-    channel: 'whatsapp',
+    channel: ProviderIds.WHATSAPP,
     recipient: '1234567890',
     template: 'dcr_issued_v1',
     language: 'en',

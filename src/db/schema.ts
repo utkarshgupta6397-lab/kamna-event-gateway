@@ -1,4 +1,5 @@
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { ProviderIds } from '../constants/providers';
 
 export const events = sqliteTable('events', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -103,7 +104,7 @@ export type NewProviderConfigurationRecord = typeof providerConfiguration.$infer
 
 export const webhookEvents = sqliteTable('webhook_events', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  provider: text('provider').notNull().default('meta'),
+  provider: text('provider').notNull().default(ProviderIds.WHATSAPP),
   eventType: text('event_type'),
   webhookObject: text('webhook_object'),
   providerMessageId: text('provider_message_id'),

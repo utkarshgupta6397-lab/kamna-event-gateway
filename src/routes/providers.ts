@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { FastifyInstance } from 'fastify';
 import { ProviderConfigurationService } from '../services/ProviderConfigurationService';
 import { MetaApiService } from '../services/metaApiService';
+import { ProviderIds } from '../constants/providers';
 
 export const providerRoutes = async (fastify: FastifyInstance) => {
   
@@ -9,7 +10,7 @@ export const providerRoutes = async (fastify: FastifyInstance) => {
   fastify.get('/:provider', async (request, reply) => {
     const { provider } = request.params as { provider: string };
     
-    if (provider === 'whatsapp') {
+    if (provider === ProviderIds.WHATSAPP) {
       const config = await ProviderConfigurationService.getMetaConfiguration();
       if (!config) {
         return reply.send({ configured: false });
@@ -37,7 +38,7 @@ export const providerRoutes = async (fastify: FastifyInstance) => {
     const { provider } = request.params as { provider: string };
     const body = request.body as Record<string, unknown>;
     
-    if (provider === 'whatsapp') {
+    if (provider === ProviderIds.WHATSAPP) {
       await ProviderConfigurationService.saveMetaConfiguration(body);
       return reply.send({ success: true });
     }
@@ -75,7 +76,7 @@ export const providerRoutes = async (fastify: FastifyInstance) => {
   fastify.post('/:provider/test', async (request, reply) => {
     const { provider } = request.params as { provider: string };
     
-    if (provider !== 'whatsapp') {
+    if (provider !== ProviderIds.WHATSAPP) {
       return reply.status(400).send({ success: false, error: 'Test connection only supported for WhatsApp currently' });
     }
 

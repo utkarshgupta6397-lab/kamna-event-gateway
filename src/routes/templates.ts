@@ -4,6 +4,7 @@ import { db } from '../db';
 import { whatsappTemplates } from '../db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { MetaApiService } from '../services/metaApiService';
+import { ProviderIds } from '../constants/providers';
 
 import { MetaMapper } from '../mappers/metaMapper';
 
@@ -49,7 +50,7 @@ export const templateRoutes: FastifyPluginAsync = async (app: FastifyInstance) =
       const requirements = MetaMapper.getTemplateRequirements(components);
 
       const payload: any = {
-        channel: 'whatsapp',
+        channel: ProviderIds.WHATSAPP,
         recipient: '918744832318', // Default test number
         template: name,
         language: template.language,

@@ -5,6 +5,7 @@ import { ProviderConfigurationService } from '../services/ProviderConfigurationS
 import { db } from '../db';
 import { webhookEvents, providerWebhookLogs } from '../db/schema';
 import { MetaWebhookProcessor } from '../services/metaWebhookProcessor';
+import { ProviderIds } from '../constants/providers';
 
 interface CustomRequest extends FastifyRequest {
   rawBodyString?: string;
@@ -97,7 +98,7 @@ export const webhookRoutes = async (fastify: FastifyInstance) => {
       const config = await ProviderConfigurationService.getMetaConfiguration();
       
       if (config && config.verifyToken === token) {
-        fastify.log.info({ provider: 'meta' }, 'Meta Webhook GET verification challenge successful');
+        fastify.log.info({ provider: ProviderIds.WHATSAPP }, 'Meta Webhook GET verification challenge successful');
         
         // Update DB asynchronously so we don't block response
         ProviderConfigurationService.updateVerificationStatus('whatsapp', true).catch(e => {
@@ -106,7 +107,7 @@ export const webhookRoutes = async (fastify: FastifyInstance) => {
         
         return reply.status(200).send(challenge);
       } else {
-        fastify.log.warn({ provider: 'meta', tokenProvided: token }, 'Meta Webhook GET verification failed: token mismatch');
+        fastify.log.warn({ provider: ProviderIds.WHATSAPP, tokenProvided: token }, 'Meta Webhook GET verification failed: token mismatch');
         return reply.status(403).send('Forbidden');
       }
     }
@@ -135,7 +136,7 @@ export const webhookRoutes = async (fastify: FastifyInstance) => {
       sigResult = verifyMetaSignature(sigHeader, rawBody, appSecret);
     } else {
       if (env.NODE_ENV === 'production') {
-        fastify.log.error({ provider: 'meta' }, 'Meta App Secret is not configured in production. Rejecting webhook.');
+        fastify.log.error({ provider: ProviderIds.WHATSAPP }, 'Meta App Secret is not configured in production. Rejecting webhook.');
         sigResult = {
           signaturePresent: Boolean(sigHeader),
           signatureValid: false,
@@ -143,7 +144,7 @@ export const webhookRoutes = async (fastify: FastifyInstance) => {
           validationError: 'Meta App Secret is not configured in production environment',
         };
       } else {
-        fastify.log.warn({ provider: 'meta' }, 'Meta App Secret is not configured. Skipping HMAC signature verification in development mode.');
+        fastify.log.warn({ provider: ProviderIds.WHATSAPP }, 'Meta App Secret is not configured. Skipping HMAC signature verification in development mode.');
         sigResult = {
           signaturePresent: Boolean(sigHeader),
           signatureValid: true,
@@ -169,7 +170,7 @@ export const webhookRoutes = async (fastify: FastifyInstance) => {
     if (!sigResult.signatureValid) {
       fastify.log.warn(
         {
-          provider: 'meta',
+          provider: ProviderIds.WHATSAPP,
           eventType,
           signaturePresent: sigResult.signaturePresent,
           signatureValid: false,
@@ -180,7 +181,7 @@ export const webhookRoutes = async (fastify: FastifyInstance) => {
       );
 
       await db.insert(providerWebhookLogs).values({
-        provider: 'meta',
+        provider: ProviderIds.WHATSAPP,
         receivedAt: new Date(),
         httpMethod: request.method,
         requestUrl: request.url,
@@ -208,7 +209,7 @@ export const webhookRoutes = async (fastify: FastifyInstance) => {
 
     // Insert valid webhook log into DB
     const [insertedLog] = await db.insert(providerWebhookLogs).values({
-      provider: 'meta',
+      provider: ProviderIds.WHATSAPP,
       receivedAt: new Date(),
       httpMethod: request.method,
       requestUrl: request.url,
@@ -230,7 +231,7 @@ export const webhookRoutes = async (fastify: FastifyInstance) => {
     // Log successful webhook reception
     fastify.log.info(
       {
-        provider: 'meta',
+        provider: ProviderIds.WHATSAPP,
         eventType,
         signaturePresent: sigResult.signaturePresent,
         signatureValid: true,
@@ -243,7 +244,7 @@ export const webhookRoutes = async (fastify: FastifyInstance) => {
     // Insert into webhookEvents for queue engine processing
     if (!isInvalid) {
       const [inserted] = await db.insert(webhookEvents).values({
-        provider: 'meta',
+        provider: ProviderIds.WHATSAPP,
         rawPayload: payload,
         receivedAt: new Date(),
         createdAt: new Date(),

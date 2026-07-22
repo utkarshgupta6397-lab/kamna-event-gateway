@@ -1,4 +1,5 @@
 import { Transport, TransportResponse } from './Transport';
+import { ProviderIds } from '../constants/providers';
 import { v4 as uuidv4 } from 'uuid';
 
 export class MockTransport implements Transport {
@@ -11,7 +12,7 @@ export class MockTransport implements Transport {
       providerMessageId: `mock_wamid_${uuidv4().replace(/-/g, '').substring(0, 16)}`,
       providerStatus: 'accepted',
       providerResponse: {
-        messaging_product: 'whatsapp',
+        messaging_product: ProviderIds.WHATSAPP,
         contacts: [{ input: message.recipient, wa_id: message.recipient }],
         messages: [{ id: `mock_wamid_${uuidv4().replace(/-/g, '').substring(0, 16)}` }]
       }

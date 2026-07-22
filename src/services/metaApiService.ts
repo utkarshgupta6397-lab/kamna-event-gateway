@@ -2,6 +2,7 @@
 import { ProviderConfigurationService } from './ProviderConfigurationService';
 import { db } from '../db';
 import { whatsappTemplates } from '../db/schema';
+import { ProviderIds } from '../constants/providers';
 
 export class MetaApiService {
   
@@ -69,7 +70,7 @@ export class MetaApiService {
 
     const url = `https://graph.facebook.com/${config.apiVersion}/${config.phoneNumberId}/media`;
     const formData = new FormData();
-    formData.append('messaging_product', 'whatsapp');
+    formData.append('messaging_product', ProviderIds.WHATSAPP);
     
     let buffer: Buffer;
     let filename = 'media';

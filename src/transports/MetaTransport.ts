@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Transport, TransportResponse } from './Transport';
+import { ProviderIds } from '../constants/providers';
 import { MetaApiService } from '../services/metaApiService';
 import { MetaMapper } from '../mappers/metaMapper';
 import { db } from '../db';
@@ -84,7 +85,7 @@ export class MetaTransport implements Transport {
       );
 
       const payload = {
-        messaging_product: 'whatsapp',
+        messaging_product: ProviderIds.WHATSAPP,
         to: message.recipient,
         type: 'template',
         template: templatePayload

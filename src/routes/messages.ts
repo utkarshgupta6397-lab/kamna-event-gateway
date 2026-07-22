@@ -9,6 +9,7 @@ import { CommunicationProcessor } from '../services/communicationProcessor';
 import { eq, desc, or, asc } from 'drizzle-orm';
 import { MetaApiService } from '../services/metaApiService';
 import { MetaMapper } from '../mappers/metaMapper';
+import { ProviderIds } from '../constants/providers';
 
 const messageSchema = z.object({
   channel: z.string().min(1),
@@ -89,7 +90,7 @@ export const messageRoutes: FastifyPluginAsync = async (app: FastifyInstance) =>
           map.set(key, {
             recipient: key,
             customerName: msg.sender || key,
-            channel: 'whatsapp',
+            channel: ProviderIds.WHATSAPP,
             lastActivity: msg.timestamp || msg.createdAt,
             lastMessage: {
               id: `in_${msg.id}`,
@@ -248,7 +249,7 @@ export const messageRoutes: FastifyPluginAsync = async (app: FastifyInstance) =>
       const body = messageSchema.parse(request.body);
       
       // Validation Logic
-      if (body.channel === 'whatsapp') {
+      if (body.channel === ProviderIds.WHATSAPP) {
         const templates = await MetaApiService.getTemplates();
         const targetTemplate = templates.find(t => t.name === body.template && (body.language ? t.language === body.language : true));
 

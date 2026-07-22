@@ -4,6 +4,7 @@ import { db } from '../db';
 import { providerConfiguration } from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { encrypt, decrypt } from '../security/encryption';
+import { ProviderIds } from '../constants/providers';
 
 export class ProviderConfigurationService {
   
@@ -13,7 +14,7 @@ export class ProviderConfigurationService {
   }
 
   static async getMetaConfiguration() {
-    const config = await this.getConfiguration('whatsapp');
+    const config = await this.getConfiguration(ProviderIds.WHATSAPP);
     if (!config) return null;
 
     const settings = (config.settingsJson as Record<string, any>) || {};
@@ -67,7 +68,7 @@ export class ProviderConfigurationService {
   }
 
   static async saveMetaConfiguration(payload: Record<string, any>) {
-    const provider = 'whatsapp';
+    const provider = ProviderIds.WHATSAPP;
     const [existing] = await db.select().from(providerConfiguration).where(eq(providerConfiguration.provider, provider));
     
     const settings = payload.settings || {};

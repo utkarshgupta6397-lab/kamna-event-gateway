@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { db } from '../db';
 import { providerWebhookLogs, providerConfiguration } from '../db/schema';
 import { desc, eq, sql } from 'drizzle-orm';
+import { ProviderIds } from '../constants/providers';
 import { sseService } from '../services/sse';
 import { logBuffer } from '../services/loggerBuffer';
 import os from 'os';
@@ -15,7 +16,7 @@ export const diagnosticsRoutes = async (fastify: FastifyInstance) => {
       dbConnected = false;
     }
 
-    const metaProvider = await db.select().from(providerConfiguration).where(eq(providerConfiguration.provider, 'meta_whatsapp')).limit(1);
+    const metaProvider = await db.select().from(providerConfiguration).where(eq(providerConfiguration.provider, ProviderIds.WHATSAPP)).limit(1);
     const metaConfig = (metaProvider[0]?.settingsJson || {}) as Record<string, unknown>;
 
     let latestWebhook = null;

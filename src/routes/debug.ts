@@ -3,6 +3,8 @@ import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { EventBus, EventType } from '../services/eventBus';
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '../db';
+import { env } from '../config/env';
+import { ProviderIds } from '../constants/providers';
 import { outboundMessages } from '../db/schema';
 import { desc } from 'drizzle-orm';
 
@@ -62,7 +64,7 @@ export const debugRoutes: FastifyPluginAsync = async (app: FastifyInstance) => {
     const wamid = lastMsg?.providerMessageId || `wamid.${uuidv4()}`;
     const waid = lastMsg?.recipient || '919999999999';
 
-    const payload: Record<string, any> = { object: 'whatsapp_business_account', entry: [{ id: 'test_account', changes: [{ value: { messaging_product: 'whatsapp' } }] }] };
+    const payload: Record<string, any> = { object: 'whatsapp_business_account', entry: [{ id: 'test_account', changes: [{ value: { messaging_product: ProviderIds.WHATSAPP } }] }] };
 
     const timestamp = Math.floor(Date.now() / 1000).toString();
 
