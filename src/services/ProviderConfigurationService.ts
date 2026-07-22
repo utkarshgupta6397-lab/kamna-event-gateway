@@ -38,6 +38,16 @@ export class ProviderConfigurationService {
       }
     }
 
+    let appSecret = settings.appSecret || '';
+    if (settings.encryptedAppSecret) {
+      try {
+        appSecret = decrypt(settings.encryptedAppSecret);
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to decrypt Meta app secret');
+      }
+    }
+
     return {
       enabled: config.enabled,
       isDefault: config.isDefault,
@@ -49,6 +59,7 @@ export class ProviderConfigurationService {
       defaultLanguage: settings.defaultLanguage,
       testPhoneNumber: settings.testPhoneNumber,
       verifyToken,
+      appSecret,
       webhookVerified: settings.webhookVerified || false,
       lastVerificationAt: settings.lastVerificationAt,
       rawSettings: settings
@@ -73,6 +84,13 @@ export class ProviderConfigurationService {
       delete settings.verifyToken;
     } else if (existing && existing.settingsJson && (existing.settingsJson as Record<string, any>).encryptedVerifyToken) {
       settings.encryptedVerifyToken = (existing.settingsJson as Record<string, any>).encryptedVerifyToken;
+    }
+
+    if (settings.appSecret) {
+      settings.encryptedAppSecret = encrypt(settings.appSecret);
+      delete settings.appSecret;
+    } else if (existing && existing.settingsJson && (existing.settingsJson as Record<string, any>).encryptedAppSecret) {
+      settings.encryptedAppSecret = (existing.settingsJson as Record<string, any>).encryptedAppSecret;
     }
 
     if (existing) {
