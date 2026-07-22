@@ -156,7 +156,7 @@ export const webhookRoutes = async (fastify: FastifyInstance) => {
     // Determine event type for logging
     let eventType = 'unknown';
     if (payload && payload.object === 'whatsapp_business_account') {
-      const entryList = (payload as any).entry || [];
+      const entryList = (payload.entry as Array<{ changes?: Array<{ value?: { statuses?: unknown; messages?: unknown } }> }>) || [];
       for (const entry of entryList) {
         for (const change of entry.changes || []) {
           if (change?.value?.statuses) eventType = 'status';
